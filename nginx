@@ -1,0 +1,23 @@
+Iniciar o Nginx:
+    sudo systemctl start nginx
+Verificar o status do Nginx:
+    sudo systemctl status nginx
+Habilitar o Nginx para iniciar na inicialização do sistema (boot):
+    sudo systemctl enable nginx
+Reiniciar o Nginx:
+    sudo systemctl restart nginx
+Recarregar a configuração (sem parar o servidor):
+    sudo systemctl reload nginx
+Parar o Nginx:
+    sudo systemctl stop nginx 
+
+Default port:
+            80
+
+Default path:
+        /etc/nginx/
+
+
+
+https://youtu.be/gd_cUmwzgEM
+https://medium.com/@habbema/nginx-instalação-configuração-logs-e-publicação-de-sites-d533cfdc0a4b

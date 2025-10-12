@@ -16,12 +16,13 @@
 #include <cctype>
 #include <cmath>
 #include <ctime>
+#include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <fcntl.h>
 #include <fstream>
 #include <limits>
-#include <iostream>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -37,6 +38,12 @@
 #include <stack>
 #include <list>
 #include <map>
+
+// Webserv
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/epoll.h>
 
 // Colors
 #define RESET   "\033[0m"
@@ -59,20 +66,32 @@
 #define BCK_CYAN    "\033[46m"
 #define BCK_WHITE   "\033[47m"
 
+// Macros
+
+#define MAX_EVENTS 64
+#define BACKLOG 16
+#define BUFFER_SIZE 4096
+#define PORT 8080
+
+
 class Server
 {
 private:
-    /* data */
+	int _SocketFD;
+	struct sockaddr_in _SocketAddress;
 public:
-    Server();
+	Server();
 	Server(const Server& obj);
 	Server operator=(const Server& obj);
-    ~Server();
+	~Server();
+
+// Functions
+    Server(int port, u_long interface);
+/* Defining Server Address */
+	void SetAddr(int domain, int port, int interface);
 
 
-
-
-    // Exception
+// Exception
 	class ServerException : public std::exception {
 		private:
 			std::string _errorMsg;

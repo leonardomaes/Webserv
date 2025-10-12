@@ -35,9 +35,40 @@ Server::~Server()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////// EXCEPTIONS ///////////////////////////////////////
+//////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
+Server::Server(int port, u_long interface)
+{
+	// Establish Connection
+	if ((this->_SocketFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		throw ServerException("Couldn't create socket");
+	// Sets the address of the server
+	SetAddr(AF_INET, port, interface);
+	// Bind or Connect Socket to Address
+	if (bind(this->_SocketFD, (const sockaddr*)&this->_SocketAddress, sizeof(this->_SocketAddress)) == -1)
+		throw ServerException("Couldn't bind port");
+	// Server will wait for connections
+	if (listen(this->_SocketFD, 10) == -1)
+		throw ServerException("Listen failed");
+	
+}
+
+/* Defining Server Address */
+void Server::SetAddr(int domain, int port, int interface)
+{
+	this->_SocketAddress.sin_family = domain;
+	// Converts port to network byte order
+	this->_SocketAddress.sin_port = htons(port);
+	this->_SocketAddress.sin_addr.s_addr = htonl(interface);	// INADDR_ANY
+	// INADDR_LOOPBACK: the local machine’s IP address: localhost, or 127.0.0.1
+	// INADDR_ANY: the IP address 0.0.0.0
+	// INADDR_BROADCAST: the IP address 255.255.255.255
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// EXCEPTIONS ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 
 Server::ServerException::ServerException(const std::string& error)
 {
