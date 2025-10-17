@@ -44,6 +44,7 @@ Server::Server(int port, u_long interface)
 	if ((this->_SocketFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw ServerException("Couldn't create socket");
 	// Sets the address of the server
+	memset(&this->_SocketAddress, 0, sizeof(this->_SocketAddress));
 	SetAddr(AF_INET, port, interface);
 	// Bind or Connect Socket to Address
 	if (bind(this->_SocketFD, (const sockaddr*)&this->_SocketAddress, sizeof(this->_SocketAddress)) == -1)
@@ -52,15 +53,13 @@ Server::Server(int port, u_long interface)
 	if (listen(this->_SocketFD, 10) == -1)
 		throw ServerException("Listen failed");
 
-
-	int clientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, (socklen_t*)(sizeof(this->_SocketAddress)));
+	size_t addrlen = sizeof(this->_SocketAddress);
+	this->_ClientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, (socklen_t*)(&addrlen));
     char buffer[1024] = { 0 };
-    recv(clientFD, buffer, sizeof(buffer), 0);
+    recv(this->_ClientFD, buffer, sizeof(buffer), 0);
     std::cout << "Message from client: " << buffer
               << std::endl;
 
-    // closing the socket.
-    close(clientFD);
 }
 
 /* Defining Server Address */
@@ -73,6 +72,21 @@ void Server::SetAddr(int domain, int port, int interface)
 	// INADDR_LOOPBACK: the local machine’s IP address: localhost, or 127.0.0.1
 	// INADDR_ANY: the IP address 0.0.0.0
 	// INADDR_BROADCAST: the IP address 255.255.255.255
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////// GETTER /////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+int Server::getClientFD()
+{
+	return this->_ClientFD;
+}
+
+int Server::getSocketFD()
+{
+	return this->_SocketFD;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

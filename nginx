@@ -13,10 +13,10 @@ Parar o Nginx:
 
 Default port:
             80
-
 Default path:
         /etc/nginx/
-
+Listening ports:
+        netstat -pln
 
 
 https://youtu.be/gd_cUmwzgEM
@@ -26,3 +26,6 @@ Web Server
 Reverse Proxy
 Load Balancer
 Caching System
+
+
+

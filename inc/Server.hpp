@@ -78,6 +78,7 @@ class Server
 {
 private:
 	int _SocketFD;
+	int	_ClientFD;
 	struct sockaddr_in _SocketAddress;
 public:
 	Server();
@@ -90,6 +91,10 @@ public:
 /* Defining Server Address */
 	void SetAddr(int domain, int port, int interface);
 
+
+// Getters
+	int getClientFD();
+	int getSocketFD();
 
 // Exception
 	class ServerException : public std::exception {
