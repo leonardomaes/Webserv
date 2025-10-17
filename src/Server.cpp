@@ -53,12 +53,18 @@ Server::Server(int port, u_long interface)
 	if (listen(this->_SocketFD, 10) == -1)
 		throw ServerException("Listen failed");
 
-	size_t addrlen = sizeof(this->_SocketAddress);
-	this->_ClientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, (socklen_t*)(&addrlen));
-    char buffer[1024] = { 0 };
-    recv(this->_ClientFD, buffer, sizeof(buffer), 0);
-    std::cout << "Message from client: " << buffer
-              << std::endl;
+	while (1)
+	{	
+		size_t addrlen = sizeof(this->_SocketAddress);
+		if ((this->_ClientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, (socklen_t*)(&addrlen))) < 0)
+			throw ServerException("Accept failed");
+		char buffer[1024] = { 0 };
+		recv(this->_ClientFD, buffer, sizeof(buffer), 0);
+		std::cout << buffer << std::endl;
+		char string[] = "Hello from the server";
+		send(this->_ClientFD, string, strlen(string), 0);
+		close(this->getClientFD());
+	}
 
 }
 

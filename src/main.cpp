@@ -21,7 +21,6 @@ int main(int ac, char **av)
         Server serv(8080, INADDR_ANY);
 		// closing the sockets
 		close(serv.getSocketFD());
-		close(serv.getClientFD());
     }
     catch(const std::exception& e)
     {
