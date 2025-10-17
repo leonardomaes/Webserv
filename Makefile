@@ -21,7 +21,7 @@ INC_DIR := inc
 BIN_DIR := bin
 
 # Sources & Objects
-SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/PmergeMe.cpp
+SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp
 
 OBJ = 	$(SRC:$(SRC_DIR)/%.cpp=$(BIN_DIR)/%.o)
 

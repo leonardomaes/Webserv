@@ -16,7 +16,9 @@ int main(int ac, char **av)
 {
     try
     {
-        /* code */
+		(void)ac;
+		(void)av;
+        Server(8080, INADDR_ANY);
     }
     catch(const std::exception& e)
     {

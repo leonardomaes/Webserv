@@ -51,7 +51,16 @@ Server::Server(int port, u_long interface)
 	// Server will wait for connections
 	if (listen(this->_SocketFD, 10) == -1)
 		throw ServerException("Listen failed");
-	
+
+
+	int clientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, (socklen_t*)(sizeof(this->_SocketAddress)));
+    char buffer[1024] = { 0 };
+    recv(clientFD, buffer, sizeof(buffer), 0);
+    std::cout << "Message from client: " << buffer
+              << std::endl;
+
+    // closing the socket.
+    close(clientFD);
 }
 
 /* Defining Server Address */
