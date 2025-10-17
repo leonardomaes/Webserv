@@ -44,6 +44,8 @@ Server::Server(int port, u_long interface)
 	if ((this->_SocketFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw ServerException("Couldn't create socket");
 	// Sets the address of the server
+	int reusePort = 1;
+	setsockopt(this->_SocketFD, SOL_SOCKET, SO_REUSEPORT, &reusePort, sizeof(reusePort));
 	memset(&this->_SocketAddress, 0, sizeof(this->_SocketAddress));
 	SetAddr(AF_INET, port, interface);
 	// Bind or Connect Socket to Address
@@ -61,7 +63,30 @@ Server::Server(int port, u_long interface)
 		char buffer[1024] = { 0 };
 		recv(this->_ClientFD, buffer, sizeof(buffer), 0);
 		std::cout << buffer << std::endl;
-		char string[] = "Hello from the server";
+		// 					  HEADER
+		//		{HTTP/Version Status Status-Message}
+		//		{Date: Fri, 16 Mar 2018 17:36:27 GMT}
+		//				{Server: *Server Name*}
+		// 		{Content-Type: text/html;charset=UTF-8}
+		//				{Content-Length: 1846}
+		//
+		// 					 BLANK LINE
+		//
+		// 					    BODY
+		// 					{<?xml ...>}
+		// 				{<?CODTYPE html ...>}
+		//					{<html ...>}
+		//					   {...}
+		//					  {</html>}
+		// 
+		//			HTTP/1.1 200 OK\n
+		//		Content-Type: text/plain\n
+		//		   Content-Length: 14\n
+		//					\n
+		//			  Hello world!!!
+		// 
+		// 
+		char string[] = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 14\n\nHello world!!!";
 		send(this->_ClientFD, string, strlen(string), 0);
 		close(this->getClientFD());
 	}
