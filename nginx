@@ -17,7 +17,8 @@ Default path:
         /etc/nginx/
 Listening ports:
         netstat -pln
-
+Test Connection:
+        telnet localhost PORT
 
 https://youtu.be/gd_cUmwzgEM
 https://medium.com/@habbema/nginx-instalação-configuração-logs-e-publicação-de-sites-d533cfdc0a4b
