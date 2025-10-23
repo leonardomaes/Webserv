@@ -88,6 +88,7 @@ public:
 
 // Functions
     Server(int port, u_long interface);
+    void Start();
 /* Defining Server Address */
 	void SetAddr(int domain, int port, int interface);
 
