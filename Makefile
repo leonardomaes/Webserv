@@ -25,6 +25,9 @@ SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp
 
 OBJ = 	$(SRC:$(SRC_DIR)/%.cpp=$(BIN_DIR)/%.o)
 
+VAL 			= valgrind --leak-check=full --show-leak-kinds=all \
+					--track-fds=yes -s ./$(NAME)
+
 # Commands
 RM = rm -rf
 
@@ -40,6 +43,9 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BIN_DIR)
 $(BIN_DIR):
 			mkdir -p $(BIN_DIR)
 
+leaks: $(NAME)
+		$(VAL)
+
 clean:
 			$(RM) $(OBJ) $(BIN_DIR)
 
@@ -52,4 +58,4 @@ dir:
 			touch src/main.cpp
 
 re: fclean all
-.PHONY: all clean fclean re
+.PHONY: all leaks clean fclean re
