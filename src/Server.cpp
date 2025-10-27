@@ -16,20 +16,6 @@ Server::Server()
 {
 }
 
-Server::Server(const Server& obj)
-{
-    (void)obj;
-}
-
-Server Server::operator=(const Server& obj)
-{
-	if (this != &obj)
-	{
-		*this = obj;
-	}
-	return *this;
-}
-
 Server::~Server()
 {
 }
@@ -70,8 +56,8 @@ void Server::SetAddr(int domain, int port, int interface)
 
 void	Server::Start()
 {
-	// Server will wait for connections
-	if (listen(this->_SocketFD, 10) == -1)
+	// Server will listen for connections
+	if (listen(this->_SocketFD, MAX_CONNECTIONS) == -1)
 		throw ServerException("Listen failed");
 
 	// Setting as non-blocking
@@ -93,14 +79,17 @@ void	Server::Start()
 	{
 		// Epoll stays till a event
 		// Then proccess n events
-		int n = epoll_wait(epfd, events, MAX_EVENTS, -1);
-		if (n < 0)
+		int eventsReady = epoll_wait(epfd, events, MAX_EVENTS, -1);
+		if (eventsReady < 0)
 			throw ServerException("epoll_wait failed");
-
-		for (int i = 0; i < n; ++i)
+		// std::cout << "DBG:  events->" << eventsReady << std::endl;
+		for (int i = 0; i < eventsReady; ++i)
 		{
+			// std::cout << "DBG:  " << i << std::endl;
+			// Accepts for new connections/events
 			if (events[i].data.fd == this->_SocketFD)
 			{
+				// std::cout << "DBG:  Triggered 1" << std::endl;
 				socklen_t addrlen = sizeof(this->_SocketAddress);
 				if ((this->_ClientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen)) < 0)
 					throw ServerException("Accept failed");
@@ -112,31 +101,41 @@ void	Server::Start()
 
 				// Epoll monitor client and stays till event
 				// EPOLLIN
+				// EPOLLET - Each trigger remove the actual event
 				epoll_event client_ev;
-				client_ev.events = EPOLLIN | EPOLLRDHUP;
-				client_ev.data.fd = this->_ClientFD;
+				client_ev.events = EPOLLIN /* | EPOLLET */;
+				client_ev.data.fd = this->getClientFD();
 				if (epoll_ctl(epfd, EPOLL_CTL_ADD, this->getClientFD(), &client_ev) == -1)
 					throw ServerException("epoll_ctl: ClientFD");
 			}
 			else if (events[i].events & EPOLLIN)
 			{
+				// std::cout << "DBG:  Triggered 2" << std::endl;
 				char buffer[1024];
-				ssize_t bytes = recv(events[i].data.fd, buffer, sizeof(buffer) - 1, 0);
-				if (bytes <= 0)
+				// Received HTTP
+				ssize_t bytes = recv(events[i].data.fd, buffer, sizeof(buffer) - 1, 0);	// can be replaced by the EPOLLET flag in events
+				if (bytes <= 0)	// Error(-1) or closed by EOF (0)
 				{
 					close(events[i].data.fd);
 					epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
 					continue ;
 				}
+				// TO DO
+				// Parse of HTTP Request
 				std::cout << buffer << std::endl;
 				char string[] = 
 					"HTTP/1.1 200 OK\n"
 					"Content-Type: text/plain\n"
 					"Content-Length: 15\n"
 					"\nHello world!!!\n";
+				// TO DO
+				// Send HTTP response
 				send(this->_ClientFD, string, strlen(string), 0);
-				close(events[i].data.fd);
+				// Delete event from epoll
 				epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+				// TO DO
+				// Check line, if "Connection: keep-alive", we must not close it
+				close(events[i].data.fd);
 			}
 			
 		}
