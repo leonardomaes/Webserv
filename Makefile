@@ -52,10 +52,5 @@ clean:
 fclean: clean
 			$(RM) $(NAME)
 
-dir:
-			mkdir -p $(SRC_DIR)
-			mkdir -p $(INC_DIR)
-			touch src/main.cpp
-
 re: fclean all
 .PHONY: all leaks clean fclean re
