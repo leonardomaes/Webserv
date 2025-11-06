@@ -11,6 +11,8 @@ This is when you finally understand why URLs start with HTTP
   [Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages)
 - **HTTP Status Codes**
   [Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status)
+- **HTTP Request Header**
+  [Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers)
 - **EPOLL Explanation**
   [Link](https://www.youtube.com/watch?v=WuwUk7Mk80E)
 
