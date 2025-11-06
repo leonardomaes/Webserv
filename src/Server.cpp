@@ -83,7 +83,7 @@ void	Server::Start()
 		if (eventsReady < 0)
 			throw ServerException("epoll_wait failed");
 		// std::cout << "DBG:  events->" << eventsReady << std::endl;
-		for (int i = 0; i < eventsReady; ++i)
+		for (int i = 0; i < eventsReady; i++)
 		{
 			// std::cout << "DBG:  " << i << std::endl;
 			// Accepts for new connections/events
@@ -113,7 +113,7 @@ void	Server::Start()
 				// std::cout << "DBG:  Triggered 2" << std::endl;
 				char buffer[1024];
 				// Received HTTP
-				ssize_t bytes = recv(events[i].data.fd, buffer, sizeof(buffer) - 1, 0);	// can be replaced by the EPOLLET flag in events
+				ssize_t bytes = recv(events[i].data.fd, buffer, sizeof(buffer) - 1, 0);	// recv can be replaced by the EPOLLET flag in events
 				if (bytes <= 0)	// Error(-1) or closed by EOF (0)
 				{
 					close(events[i].data.fd);
@@ -121,7 +121,7 @@ void	Server::Start()
 					continue ;
 				}
 				// TO DO
-				// Parse of HTTP Request
+				// Parse of HTTP Request (REQUEST)
 				std::cout << buffer << std::endl;
 				char string[] = 
 					"HTTP/1.1 200 OK\n"
@@ -129,7 +129,7 @@ void	Server::Start()
 					"Content-Length: 15\n"
 					"\nHello world!!!\n";
 				// TO DO
-				// Send HTTP response
+				// Send HTTP response	(RESPONSE)
 				send(this->_ClientFD, string, strlen(string), 0);
 				// Delete event from epoll
 				epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);

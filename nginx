@@ -28,5 +28,40 @@ Reverse Proxy
 Load Balancer
 Caching System
 
+HTTP HEADER SPECS:
 
+Host:
+      Specifies the domain name of the server (for virtual hosting), and (optionally) the 
+      TCP port number on which the server is listening.
+      Specifies the host and port number of the server to which the request is being sent.
+
+Connection:
+  -keep-alive:
+  -close:
+      Controls whether the network connection stays open after the current transaction finishes.
+      If the value sent is "keep-alive", the connection is persistent and not closed,
+      allowing subsequent requests to the same server on the same connection.
+
+sec-ch-ua-platform:
+    -Android
+    -Chrome OS
+    -Chromium OS
+    -iOS
+    -Linux
+    -macOS
+    -Windows
+    -Unknown
+      User agent's underlying operation system/platform.
+
+User-Agent:
+    -User-Agent: Mozilla/5.0 (<system-information>) <platform> (<platform-details>) <extensions>
+
+sec-ch-ua:
+    Sec-CH-UA: '"<brand>";v="<significant version>"'',
+      User agents branding and version.
+
+sec-ch-ua-mobile:
+
+
+Accept:
 
