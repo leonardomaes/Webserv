@@ -16,8 +16,10 @@ int main(int ac, char **av)
 {
     try
     {
-		(void)ac;
-		(void)av;
+        std::string configPath;
+        configPath = (ac > 1) ? av[1] : "default.conf";
+        Config config(configPath);
+
         Server serv(8080, INADDR_ANY);
 		serv.Start();
     }
