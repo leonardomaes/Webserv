@@ -1,13 +1,23 @@
-//missing header
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Config.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/14 18:55:22 by rda-cunh          #+#    #+#             */
+/*   Updated: 2025/11/14 18:55:22 by rda-cunh         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-#include "config.hpp"
-#include "server.hpp"
+#include "../inc/Config.hpp"
+#include "../inc/Webserv.hpp"
 
-Config::Config(const std::string path) : _path(path) {}
+Config::Config(const std::string path) : _path(path) { parseConfig(); }
 
 bool Config::parseConfig()
 {
-    std::ifstream file(_path.c_str()):
+    std::ifstream file(_path.c_str());
     if (!file.is_open())
     {
         std::cerr << "Could not open config file: " << _path << std::endl;
@@ -16,9 +26,9 @@ bool Config::parseConfig()
 
     std::string line;
     int lineNum = 1;
-    while (getline(file, line))     //simple version to print lines of the config file. This will evolve later into something bigger
+    while (std::getline(file, line))     //simple version to print lines of the config file. This will evolve later into something bigger
     {
-        std::out << "Line " << lineNum << ":" << line << std::endl;
+        std::cout << "Line " << lineNum << ": " << line << std::endl;
         lineNum++;
     }
     return (true);

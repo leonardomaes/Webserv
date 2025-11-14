@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+         #
+#    By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/06/20 15:52:11 by lmaes             #+#    #+#              #
-#    Updated: 2025/06/20 15:52:12 by lmaes            ###   ########.fr        #
+#    Updated: 2025/11/14 19:00:42 by rda-cunh         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,7 +21,7 @@ INC_DIR := inc
 BIN_DIR := bin
 
 # Sources & Objects
-SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp
+SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp $(SRC_DIR)/Config.cpp
 
 OBJ = 	$(SRC:$(SRC_DIR)/%.cpp=$(BIN_DIR)/%.o)
 
