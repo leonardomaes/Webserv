@@ -14,10 +14,12 @@
 
 Server::Server()
 {
+
 }
 
 Server::~Server()
 {
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +67,7 @@ void	Server::Start()
 	if (fcntl(this->_SocketFD, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw ServerException("Non-Blocking failed");
 	// Create epoll
-	int epfd = epoll_create1(0);
+	int epfd = epoll_create(MAX_CONNECTIONS + 1);
 	// Epoll warn new reads/client with EPOLLIN
 	struct epoll_event ev;
 	memset(&ev, 0, sizeof(ev));
@@ -73,73 +75,95 @@ void	Server::Start()
 	ev.data.fd = this->_SocketFD;
 	if (epoll_ctl(epfd, EPOLL_CTL_ADD, this->_SocketFD, &ev) == -1)
 		throw ServerException("epoll_ctl: SocketFD");
-	
-	struct epoll_event events[MAX_EVENTS];
+
 	while (1)
 	{
+		struct epoll_event events[MAX_EVENTS];
 		// Epoll stays till a event
 		// Then proccess n events
 		int eventsReady = epoll_wait(epfd, events, MAX_EVENTS, -1);
 		if (eventsReady < 0)
 			throw ServerException("epoll_wait failed");
-		// std::cout << "DBG:  events->" << eventsReady << std::endl;
 		for (int i = 0; i < eventsReady; i++)
 		{
-			// std::cout << "DBG:  " << i << std::endl;
-			// Accepts for new connections/events
-			if (events[i].data.fd == this->_SocketFD)
+			int fd = events[i].data.fd;
+			if (fd == this->_SocketFD)
 			{
-				// std::cout << "DBG:  Triggered 1" << std::endl;
-				socklen_t addrlen = sizeof(this->_SocketAddress);
-				if ((this->_ClientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen)) < 0)
-					throw ServerException("Accept failed");
-
-				// Setting client as non-blocking
-				int flags = fcntl(this->_ClientFD, F_GETFL, 0);
-				if (fcntl(this->_ClientFD, F_SETFL, flags | O_NONBLOCK) == -1)
-					throw ServerException("Non-Blocking failed");
-
-				// Epoll monitor client and stays till event
-				// EPOLLIN
-				// EPOLLET - Each trigger remove the actual event
-				epoll_event client_ev;
-				client_ev.events = EPOLLIN /* | EPOLLET */;
-				client_ev.data.fd = this->getClientFD();
-				if (epoll_ctl(epfd, EPOLL_CTL_ADD, this->getClientFD(), &client_ev) == -1)
-					throw ServerException("epoll_ctl: ClientFD");
+		 		socklen_t addrlen = sizeof(this->_SocketAddress);
+				int client_fd = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen);
+				if (client_fd < 0)
+					continue;
+				this->_clients[client_fd] = Client(client_fd, epfd);
+				continue;
 			}
 			else if (events[i].events & EPOLLIN)
 			{
-				// std::cout << "DBG:  Triggered 2" << std::endl;
-				char buffer[1024];
-				// Received HTTP
-				ssize_t bytes = recv(events[i].data.fd, buffer, sizeof(buffer) - 1, 0);	// recv can be replaced by the EPOLLET flag in events
-				if (bytes <= 0)	// Error(-1) or closed by EOF (0)
-				{
-					close(events[i].data.fd);
-					epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-					continue ;
-				}
-				// TO DO
-				// Parse of HTTP Request (REQUEST)
-				std::cout << buffer << std::endl;
-				char string[] = 
-					"HTTP/1.1 200 OK\n"
-					"Content-Type: text/plain\n"
-					"Content-Length: 15\n"
-					"\nHello world!!!\n";
-				// TO DO
-				// Send HTTP response	(RESPONSE)
-				send(this->_ClientFD, string, strlen(string), 0);
-				// Delete event from epoll
-				epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-				// TO DO
-				// Check line, if "Connection: keep-alive", we must not close it
-				close(events[i].data.fd);
+				this->_clients[fd].readRequest(epfd, events[i].data.fd);
 			}
 			
 		}
 	}
+		
+		// std::cout << "DBG:  events->" << eventsReady << std::endl;
+		// for (int i = 0; i < eventsReady; i++)
+		// {
+		// 	// std::cout << "DBG:  " << i << std::endl;
+		// 	// Accepts for new connections/events
+		// 	if (events[i].data.fd == this->_SocketFD)
+		// 	{
+		// 		// std::cout << "DBG:  Triggered 1" << std::endl;
+		// 		socklen_t addrlen = sizeof(this->_SocketAddress);
+		// 		Client	client(accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen));
+
+
+		// 		// if ((this->_ClientFD = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen)) < 0)
+		// 		// 	throw ServerException("Accept failed");
+		// 		// Setting client as non-blocking
+		// 		// int flags = fcntl(this->_ClientFD, F_GETFL, 0);
+		// 		// if (fcntl(this->_ClientFD, F_SETFL, flags | O_NONBLOCK) == -1)
+		// 		// 	throw ServerException("Non-Blocking failed");
+
+
+		// 		// Epoll monitor client and stays till event
+		// 		// EPOLLIN
+		// 		// EPOLLET - Each trigger remove the actual event
+		// 		// epoll_event client_ev;
+		// 		// client_ev.events = EPOLLIN /* | EPOLLET */;
+		// 		// client_ev.data.fd = this->getClientFD();
+		// 		// if (epoll_ctl(epfd, EPOLL_CTL_ADD, this->getClientFD(), &client_ev) == -1)
+		// 		// 	throw ServerException("epoll_ctl: ClientFD");
+		// 	}
+		// 	else if (events[i].events & EPOLLIN)
+		// 	{
+		// 		// std::cout << "DBG:  Triggered 2" << std::endl;
+		// 		char buffer[1024];
+		// 		// Received HTTP
+		// 		ssize_t bytes = recv(events[i].data.fd, buffer, sizeof(buffer) - 1, 0);	// recv can be replaced by the EPOLLET flag in events
+		// 		if (bytes <= 0)	// Error(-1) or closed by EOF (0)
+		// 		{
+		// 			close(events[i].data.fd);
+		// 			epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+		// 			continue ;
+		// 		}
+		// 		// TO DO
+		// 		// Parse of HTTP Request (REQUEST)
+		// 		std::cout << buffer << std::endl;
+		// 		char string[] = 
+		// 			"HTTP/1.1 200 OK\n"
+		// 			"Content-Type: text/plain\n"
+		// 			"Content-Length: 15\n"
+		// 			"\nHello world!!!\n";
+		// 		// TO DO
+		// 		// Send HTTP response	(RESPONSE)
+		// 		send(this->_ClientFD, string, strlen(string), 0);
+		// 		// Delete event from epoll
+		// 		epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+		// 		// TO DO
+		// 		// Check line, if "Connection: keep-alive", we must not close it
+		// 		close(events[i].data.fd);
+		// 	}
+			
+		// }
 		// 					  HEADER
 		//		{HTTP/Version Status Status-Message}
 		//		{Date: Fri, 16 Mar 2018 17:36:27 GMT}
@@ -168,11 +192,6 @@ void	Server::Start()
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// GETTER /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-
-int Server::getClientFD()
-{
-	return this->_ClientFD;
-}
 
 int Server::getSocketFD()
 {

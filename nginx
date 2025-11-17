@@ -64,4 +64,5 @@ sec-ch-ua-mobile:
 
 
 Accept:
+      Informs the server about the types of data that can be sent back.
 

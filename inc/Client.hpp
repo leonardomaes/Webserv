@@ -1,47 +1,45 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
+/*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/06 19:36:46 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/06 19:36:47 by lmaes            ###   ########.fr       */
+/*   Created: 2025/11/17 18:05:22 by lmaes             #+#    #+#             */
+/*   Updated: 2025/11/17 18:05:23 by lmaes            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
 #include "Webserv.hpp"
-#include "Client.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
 
-class Server
+class Client
 {
 private:
-	int _SocketFD;
-	Client _clients[MAX_CONNECTIONS];
-	struct sockaddr_in _SocketAddress;
+	int			_ClientFD;
+	Request		_request;
+	Response	_response;
 public:
-	Server();
-	~Server();
+	Client();
+	Client(int fd, int epfd);
+	~Client();
 
 // Functions
-    Server(int port, u_long interface);
-    void Start();
-/* Defining Server Address */
-	void SetAddr(int domain, int port, int interface);
+	int readRequest(int epfd, int eventFD);
 
-
-// Getters
-	int getSocketFD();
+// Getter
+	int getClientFD();
 
 // Exception
-	class ServerException : public std::exception {
+	class ClientException : public std::exception {
 		private:
 			std::string _errorMsg;
 		public:
-			ServerException(const std::string& error);
-			~ServerException() throw();
+			ClientException(const std::string& error);
+			~ClientException() throw();
 			virtual const char* what() const throw();
 	};
 };

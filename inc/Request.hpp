@@ -17,9 +17,12 @@
 class Request
 {
 private:
-
+	std::string _method;
+	std::string _host;
+	std::string _connection;
+	std::string _accept;
 public:
-	Request(/* args */);
+	Request();
 	~Request();
 
 // Functions

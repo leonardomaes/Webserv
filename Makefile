@@ -21,7 +21,7 @@ INC_DIR := inc
 BIN_DIR := bin
 
 # Sources & Objects
-SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp
+SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp $(SRC_DIR)/Client.cpp $(SRC_DIR)/Request.cpp $(SRC_DIR)/Response.cpp
 
 OBJ = 	$(SRC:$(SRC_DIR)/%.cpp=$(BIN_DIR)/%.o)
 
