@@ -43,7 +43,9 @@ Client::~Client()
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-int Client::readRequest(int epfd, int eventFD)
+
+
+void Client::readRequest(int epfd, int eventFD)
 {
 	char buffer[1024];
 	// Received HTTP
@@ -52,26 +54,32 @@ int Client::readRequest(int epfd, int eventFD)
 	{
 		close(eventFD);
 		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
-		return 1;
+		throw ClientException("Read failed");
 	}
 	buffer[bytes] = '\0';
+	this->_request = Request(buffer);
 	// TO DO
 	// Parse of HTTP Request (REQUEST)
 	std::cout << buffer << std::endl;
-	char string[] = 
-		"HTTP/1.1 200 OK\n"
-		"Content-Type: text/plain\n"
-		"Content-Length: 15\n"
-			"\nHello world!!!\n";
-		// TO DO
-		// Send HTTP response	(RESPONSE)
-	send(eventFD, string, strlen(string), 0);
+}
+
+void Client::sendResponse(int epfd, int eventFD)
+{
+	std::string body = "Hello World!!!\r\n";
+	std::stringstream ss;
+	ss << body.size();
+	std::string response =	"HTTP/1.1 200 OK\r\n"
+							"Content-Type: text/html; charset=UTF-8\r\n"
+							"Content-Length: " + ss.str() + "\r\n\r\n" +
+							body;
+	// TO DO
+	// Send HTTP response	(RESPONSE)
+	send(eventFD, response.c_str(), response.size(), 0);
 	// Delete evento from epoll
 	epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
 	// TO DO
 	// Check line, if "Connection: keep-alive", we must not close it
 	close(eventFD);
-	return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

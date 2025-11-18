@@ -22,16 +22,19 @@ private:
 	int			_ClientFD;
 	Request		_request;
 	Response	_response;
+
+// Functions
 public:
 	Client();
 	Client(int fd, int epfd);
 	~Client();
 
-// Functions
-	int readRequest(int epfd, int eventFD);
-
 // Getter
 	int getClientFD();
+
+// Functions
+	void readRequest(int epfd, int eventFD);
+	void sendResponse(int epfd,  int eventFD);
 
 // Exception
 	class ClientException : public std::exception {

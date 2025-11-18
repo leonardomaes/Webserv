@@ -12,8 +12,25 @@
 
 #include "../inc/Request.hpp"
 
-Request::Request(/* args */)
+Request::Request()
 {
+}
+
+Request::Request(std::string buffer)
+{
+	_firstLine = 1;
+	std::string line;
+	std::istringstream request(buffer);
+	int code = 0;
+	while (std::getline(request, line))
+	{
+		if (_firstLine)
+			code = this->parseFirstLine(line);
+		if (code != 0)
+		{
+			// Error case (TO ADD)
+		}
+	}
 }
 
 Request::~Request()
@@ -25,9 +42,18 @@ Request::~Request()
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-
+int Request::parseFirstLine(std::string line)
+{
+	for (size_t i = 0; line[i] != ' '; i++)
+		this->_method.insert(_method.end(), line[i]);
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
+		return 400;
+	return 0;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// GETTER /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
+
+
 
