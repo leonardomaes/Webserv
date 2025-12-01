@@ -13,6 +13,7 @@
 #pragma once
 
 #include "Webserv.hpp"
+#include "Request.hpp"
 
 class Response
 {
@@ -24,6 +25,6 @@ public:
 	~Response();
 
 // Functions
-
+	void generateResponse(Request obj, int epfd, int eventFD);
 // Getters
 };

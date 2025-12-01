@@ -108,7 +108,6 @@ void	Server::Start()
 					std::cerr << "Client::" << e.what() << '\n';
 				}
 			}
-			
 		}
 	}
 }

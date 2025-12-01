@@ -115,6 +115,31 @@ void Response::FillStatus()
     _status[511] = "Network Authentication Required";
 }
 
+void Response::generateResponse(Request obj, int epfd, int eventFD)
+{
+	// *******************************************************************
+	std::string body = "Hello World!!!\r\n";
+	std::stringstream ss;
+	ss << body.size();
+	std::string response =	"HTTP/1.1 200 OK\r\n"
+							"Content-Type: text/html; charset=UTF-8\r\n"
+							"Content-Length: " + ss.str() + "\r\n\r\n" +
+							body;
+	// *******************************************************************
+	// TO DO
+	// Send HTTP response	(RESPONSE)
+	send(eventFD, response.c_str(), response.size(), 0);
+	if (obj.getConnection() == "close")
+	{
+		// Delete event from epoll
+		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
+		// TO DO
+		// Check line, if "Connection: keep-alive", we must not close it
+		close(eventFD);
+	}
+	
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// GETTER /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////

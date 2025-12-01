@@ -57,7 +57,8 @@ void Client::readRequest(int epfd, int eventFD)
 		throw ClientException("Read failed");
 	}
 	buffer[bytes] = '\0';
-	this->_request = Request(buffer);
+	this->_request = Request();
+	this->_request.parseRequest(buffer);
 	// TO DO
 	// Parse of HTTP Request (REQUEST)
 	std::cout << buffer << std::endl;
@@ -65,21 +66,9 @@ void Client::readRequest(int epfd, int eventFD)
 
 void Client::sendResponse(int epfd, int eventFD)
 {
-	std::string body = "Hello World!!!\r\n";
-	std::stringstream ss;
-	ss << body.size();
-	std::string response =	"HTTP/1.1 200 OK\r\n"
-							"Content-Type: text/html; charset=UTF-8\r\n"
-							"Content-Length: " + ss.str() + "\r\n\r\n" +
-							body;
-	// TO DO
-	// Send HTTP response	(RESPONSE)
-	send(eventFD, response.c_str(), response.size(), 0);
-	// Delete evento from epoll
-	epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
-	// TO DO
-	// Check line, if "Connection: keep-alive", we must not close it
-	close(eventFD);
+
+	this->_response = Response();
+	this->_response.generateResponse(this->_request, epfd, eventFD);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

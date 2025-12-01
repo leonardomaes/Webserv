@@ -22,6 +22,7 @@ private:
 	int			_ClientFD;
 	Request		_request;
 	Response	_response;
+	void closeConnection(int epfd, int eventFD);
 
 // Functions
 public:

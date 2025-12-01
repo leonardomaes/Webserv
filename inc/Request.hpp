@@ -18,22 +18,23 @@ class Request
 {
 private:
 	std::string _method;
-	std::string _requestTarget;
+	std::string _pathTarget;
 	std::string _protocol;
 	std::string _host;
 	std::string _connection;
 	std::string _accept;
 	bool		_firstLine;
 	int			_responseCode;
+	int parseFirstLine(std::string line);
 public:
 	Request();
-	Request(std::string buffer);
+	// Request(std::string buffer);
 	~Request();
 
 // Functions
-	int parseFirstLine(std::string line);
+	void parseRequest(std::string buffer);
 // Getters
-
+	std::string getConnection();
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };
 };
