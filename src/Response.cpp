@@ -21,11 +21,6 @@ Response::~Response()
 {
 }
 
-
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-
 void Response::FillStatus()
 {
 	// this->_status = {{100, "Continue"}, {101, "Switching Protocols"},
@@ -115,10 +110,26 @@ void Response::FillStatus()
     _status[511] = "Network Authentication Required";
 }
 
+std::string Response::getContent(Request obj)
+{
+	std::ifstream page(obj.getPathTarget().c_str());
+	//std::stringstream ss;
+	std::string content((std::istreambuf_iterator<char>(page)), std::istreambuf_iterator<char>());
+	return content;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
 void Response::generateResponse(Request obj, int epfd, int eventFD)
 {
+	std::cout << "DBG::" << obj.getPathTarget() << std::endl;
+	std::cout << "DBG::" << obj.getCode() << std::endl << std::endl;
+	
 	// *******************************************************************
-	std::string body = "Hello World!!!\r\n";
+	std::string body = this->getContent(obj);
+	//std::string body = "<!DOCTYPE html>\r\nHello World!!!\r\n";
 	std::stringstream ss;
 	ss << body.size();
 	std::string response =	"HTTP/1.1 200 OK\r\n"
@@ -137,7 +148,6 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)
 		// Check line, if "Connection: keep-alive", we must not close it
 		close(eventFD);
 	}
-	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

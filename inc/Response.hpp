@@ -26,5 +26,6 @@ public:
 
 // Functions
 	void generateResponse(Request obj, int epfd, int eventFD);
+	std::string getContent(Request obj);
 // Getters
 };

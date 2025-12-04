@@ -26,6 +26,42 @@ Request::~Request()
 {
 }
 
+int Request::parsePath()		// TO DO
+{
+	if (this->_pathTarget == "/")
+		this->_pathTarget = "index.html";
+	else if (this->_pathTarget == "/favicon.ico")
+		return 0;
+	else
+		return 1;
+	return 0;
+}
+
+int Request::parseFirstLine(std::string line)
+{
+	this->_firstLine = 0;
+	int i = 0;
+	while (line[i] != ' ')
+		this->_method.insert(_method.end(), line[i++]);
+	i++;
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
+		return 405;
+	while (line[i] != ' ')
+		this->_pathTarget.insert(_pathTarget.end(), line[i++]);
+	i++;
+	if (this->parsePath() != 0)
+		return 404;
+	
+	// If _pathTarget is invalid (Parsing target path) then error 404
+	// TO DO
+	while (line[i] != '\r')
+		this->_protocol.insert(_protocol.end(), line[i++]);
+	if (_protocol != "HTTP/1.1")
+		return 400;
+	// std::cout << "DBG::" << _protocol << "(protocol)" << std::endl;
+	return 200;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
@@ -44,33 +80,9 @@ void Request::parseRequest(std::string buffer)
 		if (this->_firstLine)
 			code = this->parseFirstLine(line);
 		if (code != 0)
-		{
-			// Error case (TO ADD)
-			// Code will assume HTTP code
-		}
+			break ;
 	}
-}
-
-int Request::parseFirstLine(std::string line)
-{
-	this->_firstLine = 0;
-	int i = 0;
-	while (line[i] != ' ')
-		this->_method.insert(_method.end(), line[i++]);
-	i++;
-	if (_method != "GET" && _method != "POST" && _method != "DELETE")
-		return 400;
-	while (line[i] != ' ')
-		this->_pathTarget.insert(_pathTarget.end(), line[i++]);
-	i++;
-	// If _pathTarget is invalid (Parsing target path) then error 404
-	// TO DO
-	while (line[i] != '\r')
-		this->_protocol.insert(_protocol.end(), line[i++]);
-	if (_protocol != "HTTP/1.1")
-		return 400;
-	// std::cout << "DBG::" << _protocol << "(protocol)" << std::endl;
-	return 0;
+	this->_responseCode = code;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -81,4 +93,20 @@ std::string Request::getConnection()
 {
 	return _connection;
 }
+
+std::string Request::getPathTarget()
+{
+	return _pathTarget;
+}
+
+std::string Request::getHost()
+{
+	return _host;
+}
+
+int Request::getCode()
+{
+	return _responseCode;
+}
+
 
