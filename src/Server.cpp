@@ -105,7 +105,7 @@ void	Server::Start()
 				}
 				catch(const std::exception& e)
 				{
-					std::cerr << "Client::" << e.what() << '\n';
+					std::cerr << "LOG::Client::" << e.what() << '\n';
 				}
 			}
 		}

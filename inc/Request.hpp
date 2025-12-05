@@ -38,6 +38,7 @@ public:
 	std::string getConnection();
 	std::string getPathTarget();
 	std::string getHost();
+	std::string getProtocol();
 	int			getCode();
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };

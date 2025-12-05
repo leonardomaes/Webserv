@@ -14,6 +14,7 @@
 
 Response::Response()
 {
+	this->_root = "./assets/html";  // Config File
 	this->FillStatus();
 }
 
@@ -110,44 +111,65 @@ void Response::FillStatus()
 	_status[511] = "Network Authentication Required";
 }
 
-std::string Response::getContent(Request obj)
+std::string Response::getContent(Request obj)	// Add dynamic error based in http code (TO DO)
 {
-	std::ifstream file(obj.getPathTarget().c_str(), std::ios::in | std::ios::binary);
-	if (!file)
-		return "";
-
 	std::string result;
+	std::string path = this->getRoot();
+	path.append(obj.getPathTarget());
+	std::cout << "DBG::" << path << " (path)" << std::endl;
+	std::ifstream file(path.c_str(), std::ios::in);
+	if (!file.is_open())
+	{
+		std::cout << "LOG:: Couldn't open target file; (Response::getContent)\n";
+		return "";
+	}
+	
 	char buffer[4096];
 
-	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0) {
+	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
 		result.append(buffer, file.gcount());
-	}
 
 	return result;
+}
+
+std::string Response::getStatus(Request obj)
+{
+	std::string status;
+	std::stringstream ss;
+	if (obj.getCode() != 200)
+	{
+		//std::cout << "DBG::" << obj.getProtocol() << "(Protocol - 2)" << std::endl;
+		ss << obj.getCode();
+		status = obj.getProtocol() + " " + ss.str() + " " + _status[obj.getCode()] + "\r\n";
+		return status;
+	}
+	return "HTTP/1.1 200 OK\r\n";
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
+// Response starts here
 void Response::generateResponse(Request obj, int epfd, int eventFD)
 {
-	std::cout << "DBG::" << obj.getPathTarget() << std::endl;
-	std::cout << "DBG::" << obj.getCode() << std::endl;
-	
+	std::cout << "DBG::" << obj.getPathTarget() << " (target)" << std::endl;
+	std::cout << "DBG::" << obj.getCode() << " (code)" << std::endl;
+
+	// GET (text) response body, based in http code
 	// *******************************************************************
+	std::string header = this->getStatus(obj);
 	std::string body = this->getContent(obj);
-	std::cout << "DBG::" << body << std::endl << std::endl;
-	//std::string body = "<!DOCTYPE html>\r\nHello World!!!\r\n";
+	std::cout << "DBG::" << header << "(header)" << std::endl;
 	std::stringstream ss;
 	ss << body.size();
-	std::string response =	"HTTP/1.1 200 OK\r\n"
+	std::string response =	header +					// Make it dynamic (TO DO)
 							"Content-Type: text/html; charset=UTF-8\r\n"
 							"Content-Length: " + ss.str() + "\r\n\r\n" +
 							body;
 	// *******************************************************************
-	// TO DO
-	// Send HTTP response	(RESPONSE)
+	// Send response to client
+	std::cout << std::endl;
 	send(eventFD, response.c_str(), response.size(), 0);
 	if (obj.getConnection() == "close")
 	{
@@ -163,3 +185,7 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)
 ///////////////////////////////////////// GETTER /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
+std::string Response::getRoot()
+{
+	return this->_root;
+}

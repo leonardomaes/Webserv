@@ -26,40 +26,44 @@ Request::~Request()
 {
 }
 
-int Request::parsePath()		// TO DO
+int Request::parsePath()		// TO DO   (Config File)
 {
 	if (this->_pathTarget == "/")
-		this->_pathTarget = "index.html";
+		this->_pathTarget = "/index.html";
 	else if (this->_pathTarget == "/favicon.ico")
 		return 0;
 	else
+	{
+		this->_pathTarget = "/error/404.html"; // path = locateError (TO DO)
 		return 1;
+	}
 	return 0;
 }
 
 int Request::parseFirstLine(std::string line)
 {
+	int code = 200;
 	this->_firstLine = 0;
 	int i = 0;
 	while (line[i] != ' ')
 		this->_method.insert(_method.end(), line[i++]);
 	i++;
+	// If _method is invalid , then invalid Method
 	if (_method != "GET" && _method != "POST" && _method != "DELETE")
-		return 405;
+		code = 405;
 	while (line[i] != ' ')
 		this->_pathTarget.insert(_pathTarget.end(), line[i++]);
 	i++;
-	if (this->parsePath() != 0)
-		return 404;
-	
-	// If _pathTarget is invalid (Parsing target path) then error 404
-	// TO DO
+	// If _pathTarget is invalid (Parsing target path), then invalid page
+	if (this->parsePath() != 0 && code == 200)
+		code = 404;
+
 	while (line[i] != '\r')
 		this->_protocol.insert(_protocol.end(), line[i++]);
-	if (_protocol != "HTTP/1.1")
-		return 400;
-	// std::cout << "DBG::" << _protocol << "(protocol)" << std::endl;
-	return 200;
+	if (_protocol != "HTTP/1.1" && code == 200)
+		code = 400;
+	// std::cout << "DBG::" << _protocol << "(protocol - 1)" << std::endl;
+	return code;
 }
 
 
@@ -107,6 +111,11 @@ std::string Request::getHost()
 int Request::getCode()
 {
 	return _responseCode;
+}
+
+std::string Request::getProtocol()
+{
+	return _protocol;
 }
 
 

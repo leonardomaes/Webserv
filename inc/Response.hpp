@@ -19,13 +19,16 @@ class Response
 {
 private:
 	std::map<int, std::string> _status;
+	std::string _root;
 	void FillStatus();
+	std::string getContent(Request obj);
+	std::string getStatus(Request obj);
 public:
 	Response(/* args */);
 	~Response();
 
 // Functions
 	void generateResponse(Request obj, int epfd, int eventFD);
-	std::string getContent(Request obj);
 // Getters
+	std::string getRoot();
 };
