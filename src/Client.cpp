@@ -59,9 +59,13 @@ void Client::readRequest(int epfd, int eventFD)
 	buffer[bytes] = '\0';
 	this->_request = Request();
 	this->_request.parseRequest(buffer);
+	std::cout << "LOG:: " << GREEN << "< Received Request (" << this->_request.getMethod() << " - "
+				<< this->_request.getPathTarget() << ")" << RESET << std::endl;		// LOG
 	// TO DO
 	// Parse of HTTP Request (REQUEST)
+	std::cout << "(START)" << std::endl;		// DELETE
 	std::cout << buffer << std::endl;
+	std::cout << "(END)" << std::endl;						// DELETE
 }
 
 void Client::sendResponse(int epfd, int eventFD)

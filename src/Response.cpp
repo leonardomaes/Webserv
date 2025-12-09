@@ -116,7 +116,7 @@ std::string Response::getContent(Request obj)	// Add dynamic error based in http
 	std::string result;
 	std::string path = this->getRoot();
 	path.append(obj.getPathTarget());
-	std::cout << "DBG::" << path << " (path)" << std::endl;
+	std::cout << "-DBG::" << path << " (path)" << std::endl;					// DELETE
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
 	{
@@ -138,7 +138,7 @@ std::string Response::getStatus(Request obj)
 	std::stringstream ss;
 	if (obj.getCode() != 200)
 	{
-		//std::cout << "DBG::" << obj.getProtocol() << "(Protocol - 2)" << std::endl;
+		//std::cout << "-DBG::" << obj.getProtocol() << "(Protocol - 2)" << std::endl;	// DELETE
 		ss << obj.getCode();
 		status = obj.getProtocol() + " " + ss.str() + " " + _status[obj.getCode()] + "\r\n";
 		return status;
@@ -151,16 +151,16 @@ std::string Response::getStatus(Request obj)
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Response starts here
-void Response::generateResponse(Request obj, int epfd, int eventFD)
+void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
 {
-	std::cout << "DBG::" << obj.getPathTarget() << " (target)" << std::endl;
-	std::cout << "DBG::" << obj.getCode() << " (code)" << std::endl;
+	std::cout << "-DBG::" << obj.getPathTarget() << " (target)" << std::endl;	// DELETE
+	std::cout << "-DBG::" << obj.getCode() << " (code)" << std::endl;			// DELETE
 
 	// GET (text) response body, based in http code
-	// *******************************************************************
+	// *******************************************************************	// TO DO
 	std::string header = this->getStatus(obj);
 	std::string body = this->getContent(obj);
-	std::cout << "DBG::" << header << "(header)" << std::endl;
+	std::cout << "-DBG::" << header << "(header)" << std::endl;					// DELETE
 	std::stringstream ss;
 	ss << body.size();
 	std::string response =	header +					// Make it dynamic (TO DO)
@@ -169,9 +169,9 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)
 							body;
 	// *******************************************************************
 	// Send response to client
-	std::cout << std::endl;
+	std::cout << std::endl;														// DELETE
 	send(eventFD, response.c_str(), response.size(), 0);
-	if (obj.getConnection() == "close")
+	if (obj.getConnection() != "keep-alive")
 	{
 		// Delete event from epoll
 		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
@@ -179,6 +179,12 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)
 		// Check line, if "Connection: keep-alive", we must not close it
 		close(eventFD);
 	}
+	if (obj.getCode() >= 400)		
+		std::cout << "LOG:: " << RED << "> Sended Response (" << obj.getCode() << " - "
+					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
+	else
+		std::cout << "LOG:: " << GREEN << "> Sended Response (" << obj.getCode() << " - "
+					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

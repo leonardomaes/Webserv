@@ -28,7 +28,7 @@ bool Config::parseConfig()
     int lineNum = 1;
     while (std::getline(file, line))     //simple version to print lines of the config file. This will evolve later into something bigger
     {
-        std::cout << "Line " << lineNum << ": " << line << std::endl;
+        std::cout << "-DBG:: Line " << lineNum << ": " << line << std::endl;
         lineNum++;
     }
     return (true);

@@ -27,6 +27,8 @@ private:
 	int			_responseCode;
 	int parseFirstLine(std::string line);
 	int	parsePath();
+	int fileOpen(std::string filename);
+	std::map<int, std::string> _errorPage;
 public:
 	Request();
 	// Request(std::string buffer);
@@ -35,6 +37,7 @@ public:
 // Functions
 	void parseRequest(std::string buffer);
 // Getters
+	std::string getMethod();
 	std::string getConnection();
 	std::string getPathTarget();
 	std::string getHost();
