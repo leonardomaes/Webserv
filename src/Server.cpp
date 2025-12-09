@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/06 19:36:46 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/09 19:51:52 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2025/12/09 19:55:17 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,7 +123,7 @@ void	Server::Start()
 	// Close connection to clients
 	for (int it = 0; it < MAX_CONNECTIONS; it++)
 	{
-		this->_clients[it].close();
+		this->_clients[it].getClientFD().close(); 
 	}
 }
 		//
