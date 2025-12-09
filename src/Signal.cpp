@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Signal.hpp"
+#include "../inc/Signal.hpp"
 
 volatile sig_atomic_t g_running = 1;
 
