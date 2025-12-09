@@ -13,6 +13,7 @@
 #pragma once
 
 #include "Webserv.hpp"
+#include "Config.hpp"
 
 class Request
 {
@@ -29,10 +30,14 @@ private:
 	int	parsePath();
 	int fileOpen(std::string filename);
 	std::map<int, std::string> _errorPage;
+	Config _conf;
 public:
 	Request();
-	// Request(std::string buffer);
+	Request(const Request& obj);
+	Request operator=(const Request& obj);
 	~Request();
+	
+	Request(Config conf);
 
 // Functions
 	void parseRequest(std::string buffer);

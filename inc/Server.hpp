@@ -13,6 +13,7 @@
 #pragma once
 
 #include "Webserv.hpp"
+#include "Config.hpp"
 #include "Client.hpp"
 
 class Server
@@ -23,11 +24,13 @@ private:
 	struct sockaddr_in _SocketAddress;
 public:
 	Server();
+	Server(const Server& obj);
+	Server operator=(const Server& obj);
 	~Server();
 
 // Functions
     Server(int port, u_long interface);
-    void Start();
+    void Start(Config conf);
 /* Defining Server Address */
 	void SetAddr(int domain, int port, int interface);
 

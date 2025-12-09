@@ -22,13 +22,36 @@ Request::Request() : _method(""), _pathTarget(""), _protocol(""), _firstLine(1)
 	_errorPage[405] = "/error/405.html";
 }
 
-// Request::Request(std::string buffer)
-// {
+Request::Request(const Request& obj)
+{
+	_method = obj._method;
+	_pathTarget = _pathTarget;
+	_protocol = obj._protocol;
+	_host = obj._host;
+	_connection = obj._connection;
+	_accept = obj._accept;
+	_firstLine = obj._firstLine;
+	_responseCode = obj._responseCode;
+	_errorPage = obj._errorPage;
+}
 
-// }
+Request Request::operator=(const Request& obj)
+{
+	if (this != &obj)
+	{
+		*this = obj;
+	}
+	return *this;	
+}
 
 Request::~Request()
 {
+}
+
+Request::Request(Config conf)
+{
+	_connection = "close";
+	this->_conf = conf;
 }
 
 int Request::fileOpen(std::string target)
@@ -94,7 +117,7 @@ int Request::parseFirstLine(std::string line)
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void Request::parseRequest(std::string buffer)
+void Request::parseRequest(std::string buffer)		// Continue...
 {
 	std::string line;
 	std::istringstream request(buffer);

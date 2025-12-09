@@ -24,7 +24,9 @@ private:
 	std::string getContent(Request obj);
 	std::string getStatus(Request obj);
 public:
-	Response(/* args */);
+	Response();
+	Response(const Response& obj);
+	Response operator=(const Response& obj);
 	~Response();
 
 // Functions

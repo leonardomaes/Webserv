@@ -13,6 +13,31 @@
 #include "../inc/Config.hpp"
 #include "../inc/Webserv.hpp"
 
+Config::Config()
+{
+
+}
+
+Config::Config(const Config& obj)
+{
+	_path = obj._path;
+}
+
+Config Config::operator=(const Config& obj)
+{
+	if (this != &obj)
+	{
+		*this = obj;
+	}
+	return *this;
+}
+
+Config::~Config()
+{
+
+}
+
+
 Config::Config(const std::string path) : _path(path) { parseConfig(); }
 
 bool Config::parseConfig()

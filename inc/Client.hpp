@@ -15,6 +15,7 @@
 #include "Webserv.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Config.hpp"
 
 class Client
 {
@@ -27,14 +28,16 @@ private:
 // Functions
 public:
 	Client();
-	Client(int fd, int epfd);
+	Client(const Client& obj);
+	Client operator=(const Client& obj);
 	~Client();
+	Client(int fd, int epfd);
 
 // Getter
 	int getClientFD();
 
 // Functions
-	void readRequest(int epfd, int eventFD);
+	void readRequest(int epfd, int eventFD, Config conf);
 	void sendResponse(int epfd,  int eventFD);
 
 // Exception

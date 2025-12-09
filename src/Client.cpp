@@ -16,6 +16,27 @@ Client::Client() : _ClientFD(0)
 {
 }
 
+Client::Client(const Client &obj)
+{
+	_ClientFD = obj._ClientFD;
+	_request = obj._request;
+	_response = obj._response;
+}
+
+Client Client::operator=(const Client& obj)
+{
+	if (this != &obj)
+	{
+		*this = obj;
+	}
+	
+	return *this;
+}
+
+Client::~Client()
+{
+}
+
 Client::Client(int fd, int epfd) : _ClientFD(fd), _request(), _response()
 {
 	if (_ClientFD < 0)
@@ -34,10 +55,6 @@ Client::Client(int fd, int epfd) : _ClientFD(fd), _request(), _response()
 		throw ClientException("epoll_ctl: ClientFD");
 }
 
-Client::~Client()
-{
-}
-
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
@@ -45,7 +62,7 @@ Client::~Client()
 
 
 
-void Client::readRequest(int epfd, int eventFD)
+void Client::readRequest(int epfd, int eventFD, Config conf)
 {
 	char buffer[1024];
 	// Received HTTP
@@ -57,7 +74,7 @@ void Client::readRequest(int epfd, int eventFD)
 		throw ClientException("Read failed");
 	}
 	buffer[bytes] = '\0';
-	this->_request = Request();
+	this->_request = Request(conf);
 	this->_request.parseRequest(buffer);
 	std::cout << "LOG:: " << GREEN << "< Received Request (" << this->_request.getMethod() << " - "
 				<< this->_request.getPathTarget() << ")" << RESET << std::endl;		// LOG

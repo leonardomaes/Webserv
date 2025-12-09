@@ -17,10 +17,15 @@
 
 class Config
 {
-    private: 
-        std::string _path;
+private: 
+	std::string _path;
 
-    public:
-        Config(const std::string path);
-        bool parseConfig();     //parse config file and return true if sucess
+public:
+	Config();
+	Config(const Config& obj);
+	Config operator=(const Config& obj);
+	~Config();
+	
+	Config(const std::string path);
+	bool parseConfig();     //parse config file and return true if sucess
 };

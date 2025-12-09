@@ -18,6 +18,21 @@ Response::Response()
 	this->FillStatus();
 }
 
+Response::Response(const Response& obj)
+{
+	_status = obj._status;
+	_root = obj._root;
+}
+
+Response Response::operator=(const Response& obj)
+{
+	if (this != &obj)
+	{
+		*this = obj;
+	}
+	return *this;
+}
+
 Response::~Response()
 {
 }

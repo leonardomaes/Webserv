@@ -17,6 +17,22 @@ Server::Server()
 
 }
 
+Server::Server(const Server& obj)
+{
+	_SocketFD = obj._SocketFD;
+	_SocketAddress = obj._SocketAddress;
+}
+
+Server Server::operator=(const Server& obj)
+{
+	if (this != &obj)
+	{
+		*this = obj;
+	}
+	
+	return *this;
+}
+
 Server::~Server()
 {
 
@@ -56,7 +72,7 @@ void Server::SetAddr(int domain, int port, int interface)
 	// INADDR_BROADCAST: the IP address 255.255.255.255
 }
 
-void	Server::Start()
+void	Server::Start(Config conf)
 {
 	// Server will listen for connections
 	if (listen(this->_SocketFD, MAX_CONNECTIONS) == -1)
@@ -100,7 +116,7 @@ void	Server::Start()
 			{
 				try
 				{
-					this->_clients[fd].readRequest(epfd, events[i].data.fd);
+					this->_clients[fd].readRequest(epfd, events[i].data.fd, conf);
 					this->_clients[fd].sendResponse(epfd, events[i].data.fd);
 				}
 				catch(const std::exception& e)
