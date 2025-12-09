@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/06 19:36:46 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/09 19:55:17 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2025/12/09 23:30:51 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,9 +85,10 @@ void	Server::Start()
 		int eventsReady = epoll_wait(epfd, events, MAX_EVENTS, -1);
 		if (eventsReady < 0)
 		{
-			if (errno = EINTR) //RM: if interrupted by a signal, ignore and go to the beggining of the loop (calling epoll_wait)
+			if (errno == EINTR) //RM: if interrupted by a signal, ignore and go to the beggining of the loop (calling epoll_wait)
 				continue;
-			throw ServerException("epoll_wait failed");
+			else
+				throw ServerException("epoll_wait failed");
 		}
 		for (int i = 0; i < eventsReady; i++)
 		{
@@ -123,7 +124,7 @@ void	Server::Start()
 	// Close connection to clients
 	for (int it = 0; it < MAX_CONNECTIONS; it++)
 	{
-		this->_clients[it].getClientFD().close(); 
+		_clients[it].closeConnection(epfd);
 	}
 }
 		//
