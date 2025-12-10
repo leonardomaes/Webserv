@@ -15,6 +15,10 @@
 
 int main(int ac, char **av)
 {
+
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     try
     {
         std::string configPath;

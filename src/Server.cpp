@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/06 19:36:46 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/06 19:36:47 by lmaes            ###   ########.fr       */
+/*   Updated: 2025/12/09 23:30:51 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,8 @@ Server::Server(const Server& obj)
 
 Server::~Server()
 {
-
+	if (this->_SocketFD != -1)
+        close(this->_SocketFD);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -92,14 +93,19 @@ void	Server::Start(Config conf)
 	if (epoll_ctl(epfd, EPOLL_CTL_ADD, this->_SocketFD, &ev) == -1)
 		throw ServerException("epoll_ctl: SocketFD");
 
-	while (1)
+	while (g_running) //RM: using g_running instead of 1
 	{
 		struct epoll_event events[MAX_EVENTS];
 		// Epoll stays till a event
 		// Then proccess n events
 		int eventsReady = epoll_wait(epfd, events, MAX_EVENTS, -1);
 		if (eventsReady < 0)
-			throw ServerException("epoll_wait failed");
+		{
+			if (errno == EINTR) //RM: if interrupted by a signal, ignore and go to the beggining of the loop (calling epoll_wait)
+				continue;
+			else
+				throw ServerException("epoll_wait failed");
+		}
 		for (int i = 0; i < eventsReady; i++)
 		{
 			int fd = events[i].data.fd;
@@ -125,6 +131,16 @@ void	Server::Start(Config conf)
 				}
 			}
 		}
+	}
+	// Cleanup after loop exits
+    std::cout << "\nShutting down gracefully\n" << std::endl;
+    close(epfd);
+    close(this->_SocketFD);
+
+	// Close connection to clients
+	for (int it = 0; it < MAX_CONNECTIONS; it++)
+	{
+		_clients[it].closeConnection(epfd);
 	}
 }
 		//

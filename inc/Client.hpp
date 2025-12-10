@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 18:05:22 by lmaes             #+#    #+#             */
-/*   Updated: 2025/11/17 18:05:23 by lmaes            ###   ########.fr       */
+/*   Updated: 2025/12/09 23:31:20 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ private:
 	int			_ClientFD;
 	Request		_request;
 	Response	_response;
-	void closeConnection(int epfd, int eventFD);
 
 // Functions
 public:
@@ -39,6 +38,7 @@ public:
 // Functions
 	void readRequest(int epfd, int eventFD, Config conf);
 	void sendResponse(int epfd,  int eventFD);
+	void closeConnection(int epfd);
 
 // Exception
 	class ClientException : public std::exception {

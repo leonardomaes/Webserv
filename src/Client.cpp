@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 18:05:15 by lmaes             #+#    #+#             */
-/*   Updated: 2025/11/17 18:05:17 by lmaes            ###   ########.fr       */
+/*   Updated: 2025/12/09 23:34:37 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,22 @@ Client::Client(int fd, int epfd) : _ClientFD(fd), _request(), _response()
 		throw ClientException("epoll_ctl: ClientFD");
 }
 
+void Client::closeConnection(int epfd)
+{
+	if (_ClientFD <= 0)		// If already closed
+		return;
+
+	// Remove FD from epoll
+	epoll_ctl(epfd, EPOLL_CTL_DEL, _ClientFD, NULL);
+
+	// Close socket
+	close(_ClientFD);
+
+	//Mark as closed
+	_ClientFD = -1;
+
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
@@ -69,8 +85,10 @@ void Client::readRequest(int epfd, int eventFD, Config conf)
 	ssize_t bytes = recv(eventFD, buffer, sizeof(buffer) - 1, 0);
 	if ((bytes <= 0))	// Error(-1) or closed by EOF (0)
 	{
-		close(eventFD);
-		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
+// RM: I sugest to delete this commented part bellow and do it inside closeConnection(epfd);
+//		close(eventFD);
+//		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
+		closeConnection(epfd);
 		throw ClientException("Read failed");
 	}
 	buffer[bytes] = '\0';
