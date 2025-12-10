@@ -23,15 +23,15 @@ Server::Server(const Server& obj)
 	_SocketAddress = obj._SocketAddress;
 }
 
-Server Server::operator=(const Server& obj)
-{
-	if (this != &obj)
-	{
-		*this = obj;
-	}
+// Server& Server::operator=(const Server& obj)
+// {
+// 	if (this != &obj)
+// 	{
+// 		*this = obj;
+// 	}
 	
-	return *this;
-}
+// 	return *this;
+// }
 
 Server::~Server()
 {

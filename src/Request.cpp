@@ -25,7 +25,7 @@ Request::Request() : _method(""), _pathTarget(""), _protocol(""), _firstLine(1)
 Request::Request(const Request& obj)
 {
 	_method = obj._method;
-	_pathTarget = _pathTarget;
+	_pathTarget = obj._pathTarget;
 	_protocol = obj._protocol;
 	_host = obj._host;
 	_connection = obj._connection;
@@ -35,23 +35,29 @@ Request::Request(const Request& obj)
 	_errorPage = obj._errorPage;
 }
 
-Request Request::operator=(const Request& obj)
-{
-	if (this != &obj)
-	{
-		*this = obj;
-	}
-	return *this;	
-}
+// Request& Request::operator=(const Request& obj)
+// {
+// 	if (this != &obj)
+// 	{
+// 		*this = obj;
+// 	}
+// 	return *this;	
+// }
 
 Request::~Request()
 {
 }
 
-Request::Request(Config conf)
+Request::Request(Config conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1)
 {
 	_connection = "close";
-	this->_conf = conf;
+	_errorPage[400] = "/error/400.html";		// Config File
+	_errorPage[401] = "/error/401.html";
+	_errorPage[403] = "/error/403.html";
+	_errorPage[404] = "/error/404.html";
+	_errorPage[405] = "/error/405.html";
+	(void)conf;
+	// this->_conf = conf;
 }
 
 int Request::fileOpen(std::string target)

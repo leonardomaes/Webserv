@@ -25,7 +25,7 @@ private:
 public:
 	Server();
 	Server(const Server& obj);
-	Server operator=(const Server& obj);
+	// Server& operator=(const Server& obj);
 	~Server();
 
 // Functions

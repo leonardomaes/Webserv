@@ -23,14 +23,14 @@ Config::Config(const Config& obj)
 	_path = obj._path;
 }
 
-Config Config::operator=(const Config& obj)
-{
-	if (this != &obj)
-	{
-		*this = obj;
-	}
-	return *this;
-}
+// Config& Config::operator=(const Config& obj)
+// {
+// 	if (this != &obj)
+// 	{
+// 		*this = obj;
+// 	}
+// 	return *this;
+// }
 
 Config::~Config()
 {

@@ -23,15 +23,15 @@ Client::Client(const Client &obj)
 	_response = obj._response;
 }
 
-Client Client::operator=(const Client& obj)
-{
-	if (this != &obj)
-	{
-		*this = obj;
-	}
+// Client& Client::operator=(const Client& obj)
+// {
+// 	if (this != &obj)
+// 	{
+// 		*this = obj;
+// 	}
 	
-	return *this;
-}
+// 	return *this;
+// }
 
 Client::~Client()
 {

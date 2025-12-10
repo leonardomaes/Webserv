@@ -24,14 +24,14 @@ Response::Response(const Response& obj)
 	_root = obj._root;
 }
 
-Response Response::operator=(const Response& obj)
-{
-	if (this != &obj)
-	{
-		*this = obj;
-	}
-	return *this;
-}
+// Response& Response::operator=(const Response& obj)
+// {
+// 	if (this != &obj)
+// 	{
+// 		*this = obj;
+// 	}
+// 	return *this;
+// }
 
 Response::~Response()
 {

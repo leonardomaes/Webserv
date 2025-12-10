@@ -34,7 +34,7 @@ private:
 public:
 	Request();
 	Request(const Request& obj);
-	Request operator=(const Request& obj);
+	// Request& operator=(const Request& obj);
 	~Request();
 	
 	Request(Config conf);

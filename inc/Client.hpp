@@ -29,7 +29,7 @@ private:
 public:
 	Client();
 	Client(const Client& obj);
-	Client operator=(const Client& obj);
+	// Client& operator=(const Client& obj);
 	~Client();
 	Client(int fd, int epfd);
 

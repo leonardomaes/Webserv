@@ -23,7 +23,7 @@ private:
 public:
 	Config();
 	Config(const Config& obj);
-	Config operator=(const Config& obj);
+	// Config& operator=(const Config& obj);
 	~Config();
 	
 	Config(const std::string path);
