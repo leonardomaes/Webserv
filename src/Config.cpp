@@ -13,10 +13,9 @@
 #include "../inc/Config.hpp"
 #include "../inc/Webserv.hpp"
 
-Config::Config()
-{
+// Canonical Form
 
-}
+Config::Config() { }
 
 Config::Config(const Config& obj)
 {
@@ -32,10 +31,7 @@ Config::Config(const Config& obj)
 // 	return *this;
 // }
 
-Config::~Config()
-{
-
-}
+Config::~Config() {}
 
 
 Config::Config(const std::string path) : _path(path) { parseConfig(); }
