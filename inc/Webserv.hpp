@@ -73,5 +73,5 @@
 #define MAX_CONNECTIONS 16
 #define BUFFER_SIZE 4096
 #define PORT 8080
-
+#define DBG_MSG 1
 

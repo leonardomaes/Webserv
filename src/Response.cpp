@@ -14,7 +14,7 @@
 
 Response::Response()
 {
-	this->_root = "./assets/html";  // Config File
+	this->_root = "assets/html";  // Config File
 	this->FillStatus();
 }
 
@@ -131,11 +131,11 @@ std::string Response::getContent(Request obj)	// Add dynamic error based in http
 	std::string result;
 	std::string path = this->getRoot();
 	path.append(obj.getPathTarget());
-	std::cout << "-DBG::" << path << " (path)" << std::endl;					// DELETE
+	printMsg(path + " (path)");
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
 	{
-		std::cout << "LOG:: Couldn't open target file; (Response::getContent)\n";
+		std::cout << "LOG:: " << RED << "Couldn't open target file; (Response::getContent)\n" << RESET;
 		return "";
 	}
 	
@@ -168,14 +168,16 @@ std::string Response::getStatus(Request obj)
 // Response starts here
 void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
 {
-	std::cout << "-DBG::" << obj.getPathTarget() << " (target)" << std::endl;	// DELETE
-	std::cout << "-DBG::" << obj.getCode() << " (code)" << std::endl;			// DELETE
+	std::stringstream dbg_ss;
+	printMsg(obj.getPathTarget() + " (target)");
+	dbg_ss << obj.getCode() << " (code)";
+	printMsg(dbg_ss.str());
 
 	// GET (text) response body, based in http code
 	// *******************************************************************	// TO DO
 	std::string header = this->getStatus(obj);
 	std::string body = this->getContent(obj);
-	std::cout << "-DBG::" << header << "(header)" << std::endl;					// DELETE
+	printMsg(header + " (header)");
 	std::stringstream ss;
 	ss << body.size();
 	std::string response =	header +					// Make it dynamic (TO DO)

@@ -12,14 +12,13 @@
 
 #pragma once
 
-#include <string>
-#include <fstream>
+#include "Webserv.hpp"
+#include "Utils.hpp"
 
 class Config
 {
 private: 
 	std::string _path;
-
 public:
 	Config();
 	Config(const Config& obj);

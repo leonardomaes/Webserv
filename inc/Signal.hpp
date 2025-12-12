@@ -13,6 +13,7 @@
 #pragma once
 
 #include <csignal>
+#include "Utils.hpp"
 
 //global variable
 extern volatile sig_atomic_t g_running;

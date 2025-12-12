@@ -14,23 +14,30 @@
 
 #include "Webserv.hpp"
 #include "Config.hpp"
+#include "Utils.hpp"
 
 class Request
 {
 private:
+	// Request info
 	std::string _method;		// !!
 	std::string _pathTarget;	// !!
 	std::string _protocol;
-	std::string _host;			// !!
-	std::string _connection;
-	std::string _accept;
+	std::map<std::string, std::string> _head;
+
+	// Variables
 	bool		_firstLine;
 	int			_responseCode;
+	std::map<int, std::string> _errorPage;
+
+	// Objs
+	Config _conf;
+
+	// Functions
 	int parseFirstLine(std::string line);
 	int	parsePath();
 	int fileOpen(std::string filename);
-	std::map<int, std::string> _errorPage;
-	Config _conf;
+	void parseHeader(std::string line);
 public:
 	Request();
 	Request(const Request& obj);
@@ -43,10 +50,9 @@ public:
 	void parseRequest(std::string buffer);
 // Getters
 	std::string getMethod();
-	std::string getConnection();
 	std::string getPathTarget();
-	std::string getHost();
 	std::string getProtocol();
+	std::string getConnection();
 	int			getCode();
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };

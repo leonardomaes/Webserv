@@ -14,13 +14,18 @@
 
 #include "Webserv.hpp"
 #include "Request.hpp"
+#include "Utils.hpp"
 
 class Response
 {
 private:
 	std::map<int, std::string> _status;
 	std::string _root;
+
+	// Fill
 	void FillStatus();
+
+	// Functions
 	std::string getContent(Request obj);
 	std::string getStatus(Request obj);
 public:
@@ -28,7 +33,6 @@ public:
 	Response(const Response& obj);
 	// Response& operator=(const Response& obj);
 	~Response();
-
 // Functions
 	void generateResponse(Request obj, int epfd, int eventFD);
 // Getters

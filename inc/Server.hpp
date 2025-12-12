@@ -16,6 +16,7 @@
 #include "Config.hpp"
 #include "Client.hpp"
 #include "Signal.hpp"
+#include "Utils.hpp"
 
 class Server
 {

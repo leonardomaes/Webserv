@@ -98,9 +98,9 @@ void Client::readRequest(int epfd, int eventFD, Config conf)
 				<< this->_request.getPathTarget() << ")" << RESET << std::endl;		// LOG
 	// TO DO
 	// Parse of HTTP Request (REQUEST)
-	std::cout << "(START)" << std::endl;		// DELETE
-	std::cout << buffer << std::endl;
-	std::cout << "(END)" << std::endl;						// DELETE
+	printMsg("(START)");
+	printMsg(buffer);
+	printMsg("(END)");
 }
 
 void Client::sendResponse(int epfd, int eventFD)

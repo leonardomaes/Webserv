@@ -15,7 +15,6 @@
 
 Config::Config()
 {
-
 }
 
 Config::Config(const Config& obj)
@@ -38,7 +37,10 @@ Config::~Config()
 }
 
 
-Config::Config(const std::string path) : _path(path) { parseConfig(); }
+Config::Config(const std::string path) : _path(path)
+{
+	parseConfig();
+}
 
 bool Config::parseConfig()
 {
@@ -53,7 +55,9 @@ bool Config::parseConfig()
     int lineNum = 1;
     while (std::getline(file, line))     //simple version to print lines of the config file. This will evolve later into something bigger
     {
-        std::cout << "-DBG:: Line " << lineNum << ": " << line << std::endl;
+		std::stringstream ss;
+		ss << "Line " << lineNum << ": " << line;
+		printMsg(ss.str());
         lineNum++;
     }
     return (true);
