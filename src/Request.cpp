@@ -47,7 +47,7 @@ Request::~Request()
 {
 }
 
-Request::Request(Config conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
+Request::Request(Config *conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
 {
 	_head["Host"] = "";
 	_head["Connection"] = "";
@@ -57,7 +57,8 @@ Request::Request(Config conf) : _method(""), _pathTarget(), _protocol(""), _firs
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
 	_errorPage[405] = "/error/405.html";
-	(void)conf;
+	_conf = conf;
+	// (void)conf;
 	// this->_conf = conf;
 }
 

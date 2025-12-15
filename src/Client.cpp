@@ -37,7 +37,7 @@ Client::~Client()
 {
 }
 
-Client::Client(int fd, int epfd) : _ClientFD(fd), _request(), _response()
+Client::Client(int fd, int epfd, Config *conf) : _ClientFD(fd), _request(conf), _response()
 {
 	if (_ClientFD < 0)
 		throw ClientException("Accept failed");
@@ -78,7 +78,7 @@ void Client::closeConnection(int epfd)
 
 
 
-void Client::readRequest(int epfd, int eventFD, Config conf)
+void Client::readRequest(int epfd, int eventFD)
 {
 	char buffer[1024];
 	// Received HTTP
@@ -92,7 +92,6 @@ void Client::readRequest(int epfd, int eventFD, Config conf)
 		throw ClientException("Read failed");
 	}
 	buffer[bytes] = '\0';
-	this->_request = Request(conf);
 	this->_request.parseRequest(buffer);
 	std::cout << "LOG:: " << GREEN << "< Received Request (" << this->_request.getMethod() << " - "
 				<< this->_request.getPathTarget() << ")" << RESET << std::endl;		// LOG

@@ -32,7 +32,7 @@ public:
 
 // Functions
     Server(int port, u_long interface);
-    void Start(Config conf);
+    void Start(Config *conf);
 /* Defining Server Address */
 	void SetAddr(int domain, int port, int interface);
 

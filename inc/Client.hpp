@@ -31,13 +31,13 @@ public:
 	Client(const Client& obj);
 	// Client& operator=(const Client& obj);
 	~Client();
-	Client(int fd, int epfd);
+	Client(int fd, int epfd, Config *conf);
 
 // Getter
 	int getClientFD();
 
 // Functions
-	void readRequest(int epfd, int eventFD, Config conf);
+	void readRequest(int epfd, int eventFD);
 	void sendResponse(int epfd,  int eventFD);
 	void closeConnection(int epfd);
 

@@ -73,7 +73,7 @@ void Server::SetAddr(int domain, int port, int interface)
 	// INADDR_BROADCAST: the IP address 255.255.255.255
 }
 
-void	Server::Start(Config conf)
+void	Server::Start(Config *conf)
 {
 	// Server will listen for connections
 	if (listen(this->_SocketFD, MAX_CONNECTIONS) == -1)
@@ -115,14 +115,14 @@ void	Server::Start(Config conf)
 				int client_fd = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen);
 				if (client_fd < 0)
 					continue;
-				this->_clients[client_fd] = Client(client_fd, epfd);
+				this->_clients[client_fd] = Client(client_fd, epfd, conf);
 				continue;
 			}
 			else if (events[i].events & EPOLLIN)
 			{
 				try
 				{
-					this->_clients[fd].readRequest(epfd, events[i].data.fd, conf);
+					this->_clients[fd].readRequest(epfd, events[i].data.fd);
 					this->_clients[fd].sendResponse(epfd, events[i].data.fd);
 				}
 				catch(const std::exception& e)

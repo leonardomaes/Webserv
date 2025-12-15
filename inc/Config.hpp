@@ -27,4 +27,6 @@ public:
 	
 	Config(const std::string path);
 	bool parseConfig();     //parse config file and return true if sucess
+	// Getter
+	std::string getPath();
 };

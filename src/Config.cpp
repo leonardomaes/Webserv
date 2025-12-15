@@ -63,3 +63,8 @@ bool Config::parseConfig()
     return (true);
 
 }
+
+std::string Config::getPath()
+{
+	return this->_path;
+}

@@ -31,7 +31,7 @@ private:
 	std::map<int, std::string> _errorPage;
 
 	// Objs
-	Config _conf;
+	Config *_conf;
 
 	// Functions
 	int parseFirstLine(std::string line);
@@ -44,7 +44,7 @@ public:
 	// Request& operator=(const Request& obj);
 	~Request();
 	
-	Request(Config conf);
+	Request(Config *conf);
 
 // Functions
 	void parseRequest(std::string buffer);

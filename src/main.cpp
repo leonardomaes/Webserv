@@ -26,7 +26,7 @@ int main(int ac, char **av)
         Config config(configPath);
 
         Server serv(8080, INADDR_ANY);
-		serv.Start(config);
+		serv.Start(&config);
     }
     catch(const std::exception& e)
     {
