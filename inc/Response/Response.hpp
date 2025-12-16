@@ -19,8 +19,18 @@
 class Response
 {
 private:
+	// Member Functions
+	typedef void (Response::*MethodHandler)(Request&, int);
+// Member Functions
+	void handleGET(Request &obj, int eventFD);
+	void handlePOST(Request &obj, int eventFD);
+	void handleDELETE(Request &obj, int eventFD);
+	void handleERROR(Request& obj, int error, int eventFD);
+	void sendFavicon(Request obj, int eventFD);
+
 	std::map<int, std::string> _status;
 	std::string _root;
+	std::map<std::string, MethodHandler> _handler;
 
 	// Fill
 	void FillStatus();
@@ -35,6 +45,18 @@ public:
 	~Response();
 // Functions
 	void generateResponse(Request obj, int epfd, int eventFD);
+
+
 // Getters
 	std::string getRoot();
+
+// Exception
+	class ResponseException : public std::exception {
+		private:
+			std::string _errorMsg;
+		public:
+			ResponseException(const std::string& error);
+			~ResponseException() throw();
+			virtual const char* what() const throw();
+	};
 };

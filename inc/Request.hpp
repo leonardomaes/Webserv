@@ -50,15 +50,13 @@ public:
 // Functions
 	void parseRequest(std::string buffer);
 
-// Member Functions
-	
-
 // Getters
 	std::string getMethod();
 	std::string getPathTarget();
 	std::string getProtocol();
 	std::string getConnection();
 	int			getCode();
+	const std::string getErrorPage(int error);
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };
 };

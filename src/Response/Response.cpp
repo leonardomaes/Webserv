@@ -16,6 +16,10 @@ Response::Response()
 {
 	this->_root = "assets/html";  // Config File
 	this->FillStatus();
+	_handler["GET"] = &Response::handleGET;
+	_handler["POST"] = &Response::handlePOST;
+	_handler["DELETE"] = &Response::handleDELETE;
+	
 }
 
 Response::Response(const Response& obj)
@@ -161,6 +165,93 @@ std::string Response::getStatus(Request obj)
 	return "HTTP/1.1 200 OK\r\n";
 }
 
+void Response::sendFavicon(Request obj, int eventFD)
+{
+	std::vector<char> data;
+	std::string path = _root + obj.getPathTarget();
+	std::ifstream file(path.c_str(), std::ios::in);
+	if (!file.is_open())
+		throw ("Invalid (Request::sendFavicon)");
+	file.seekg(0, std::ios::end);
+	std::streamsize size = file.tellg();
+	file.seekg(0, std::ios::beg);
+	data.resize(size);
+	file.read(&data[0], size);
+	std::stringstream ss;
+	ss << data.size();
+	std::string header = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: image/x-icon\r\n"
+						"Content-Length: " + ss.str() + "\r\n"
+						"Connection: close\r\n\r\n";
+    send(eventFD, header.c_str(), header.size(), 0);
+    send(eventFD, &data[0], data.size(), 0);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////// MEMBER FUNCTIONS ////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+void Response::handleGET(Request& obj, int eventFD)
+{
+	if (obj.getPathTarget() == "/icon/favicon.ico")
+	{
+		sendFavicon(obj, eventFD);
+		return ;
+	}
+	
+	std::string header = this->getStatus(obj);
+	std::string body = this->getContent(obj);
+	printMsg(header + " (header)");
+	std::stringstream ss;
+	ss << body.size();
+	std::string response =	header +					// Make it dynamic (TO DO)
+							"Content-Type: text/html; charset=UTF-8\r\n"
+							"Content-Length: " + ss.str() + "\r\n\r\n" +
+							body;
+	printMsg("\n");
+	send(eventFD, response.c_str(), response.size(), 0);
+}
+
+void Response::handlePOST(Request& obj, int eventFD)
+{
+	// Upload / CGI
+	(void)eventFD;
+	(void)obj;
+}
+
+void Response::handleDELETE(Request& obj, int eventFD)
+{
+	// Delete resource
+	(void)eventFD;
+	(void)obj;
+}
+
+void Response::handleERROR(Request& obj, int error, int eventFD)
+{
+	std::stringstream ss1;
+	ss1 << error;
+	std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
+	std::string path = getRoot();
+	path.append(obj.getErrorPage(error));
+	std::ifstream file(path.c_str(), std::ios::in);
+	std::string body;
+	if (!file.is_open())
+	{
+		std::cout << "LOG:: " << RED << "Couldn't open error file; (Response::handleERROR)\n" << RESET;
+		body = "";
+	}
+	char buffer[4096];
+	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
+		body.append(buffer, file.gcount());
+	std::stringstream ss2;
+	ss2 << body.size();
+	std::string response = header + 
+							"Content-Type: text/html; charset=UTF-8\r\n"
+							"Content-Length: " + ss2.str() + "\r\n\r\n" +
+							body;
+	send(eventFD, response.c_str(), response.size(), 0);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -172,21 +263,22 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
 	printMsg(obj.getPathTarget() + " (target)");
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
-	// GET (text) response body, based in http code
-	// *******************************************************************	// TO DO	(Pointer to member function)
-	std::string header = this->getStatus(obj);
-	std::string body = this->getContent(obj);
-	printMsg(header + " (header)");
-	std::stringstream ss;
-	ss << body.size();
-	std::string response =	header +					// Make it dynamic (TO DO)
-							"Content-Type: text/html; charset=UTF-8\r\n"
-							"Content-Length: " + ss.str() + "\r\n\r\n" +
-							body;
+	// ******************************************************************
+	try
+	{
+		std::map<std::string, MethodHandler>::iterator it;
+		it = _handler.find(obj.getMethod());
+		if (it == _handler.end())
+			throw ResponseException("Method Not Allowed");
+		MethodHandler handler = it->second;
+		(this->*handler)(obj, eventFD);
+	}
+	catch(const std::exception& e)
+	{
+		handleERROR(obj, 405, eventFD);
+		std::cerr << e.what() << '\n';
+	}
 	// *******************************************************************
-	// Send response to client
-	std::cout << std::endl;														// DELETE
-	send(eventFD, response.c_str(), response.size(), 0);
 	if (obj.getConnection() != "keep-alive")
 	{
 		// Delete event from epoll
@@ -195,7 +287,7 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
 		// Check line, if "Connection: keep-alive", we must not close it
 		close(eventFD);
 	}
-	if (obj.getCode() >= 400)		
+	if (obj.getCode() >= 400)
 		std::cout << "LOG:: " << RED << "> Sended Response (" << obj.getCode() << " - "
 					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
 	else
@@ -211,3 +303,21 @@ std::string Response::getRoot()
 {
 	return this->_root;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// EXCEPTIONS ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Response::ResponseException::ResponseException(const std::string& error)
+{
+	_errorMsg = "Error: " + error;
+}
+
+Response::ResponseException::~ResponseException() throw() {}
+
+
+const char *Response::ResponseException::what() const throw() {
+	return _errorMsg.c_str();
+}
+

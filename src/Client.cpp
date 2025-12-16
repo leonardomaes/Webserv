@@ -135,5 +135,3 @@ Client::ClientException::~ClientException() throw() {}
 const char *Client::ClientException::what() const throw() {
 	return _errorMsg.c_str();
 }
-
-

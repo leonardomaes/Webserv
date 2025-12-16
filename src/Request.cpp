@@ -102,7 +102,7 @@ int Request::parseFirstLine(std::string line)
 		this->_method.insert(_method.end(), line[i++]);
 	i++;
 	// If _method is invalid , then Invalid Method
-	if (_method != "GET" && _method != "POST" && _method != "DELETE")		// _method != _allowedMethods (Config File)
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")	// It is already in Response::generateResponse
 		code = 405;
 	while (line[i] != ' ')
 		this->_pathTarget.insert(_pathTarget.end(), line[i++]);
@@ -137,9 +137,13 @@ void Request::parseHeader(std::string line)
 		_head[key] = value;
 }
 
-int Request::parseConfig()		// Issue #3 github	// Missing Config file to make
+int Request::parseConfig()		// Missing Config file to make
 {
-
+	if (this->_pathTarget == "/favicon.ico")
+	{
+		_pathTarget = "/icon/favicon.ico";
+	}
+	
 	return 200;
 }
 
@@ -198,4 +202,9 @@ int Request::getCode()
 std::string Request::getConnection()
 {
 	return _head["Connection"];
+}
+
+const std::string Request::getErrorPage(int error)
+{
+	return _errorPage[error];
 }
