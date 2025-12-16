@@ -87,7 +87,7 @@ int Request::parsePath()		// TO DO   (Config File)
 		return 200;
 	else											// Error case
 	{
-		this->_pathTarget = "/error/404.html"; 				// path = locateError (TO DO)
+		this->_pathTarget = "/error/404.html";
 		return 404;
 	}
 	return 200;
@@ -137,6 +137,12 @@ void Request::parseHeader(std::string line)
 		_head[key] = value;
 }
 
+int Request::parseConfig()		// Issue #3 github	// Missing Config file to make
+{
+
+	return 200;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -160,6 +166,8 @@ void Request::parseRequest(std::string buffer)
 		}
 		parseHeader(line);
 	}
+	if (code == 200)
+		code = parseConfig();
 	this->_responseCode = code;
 }
 

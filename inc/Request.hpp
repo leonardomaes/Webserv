@@ -38,6 +38,7 @@ private:
 	int	parsePath();
 	int fileOpen(std::string filename);
 	void parseHeader(std::string line);
+	int parseConfig();
 public:
 	Request();
 	Request(const Request& obj);
@@ -48,6 +49,10 @@ public:
 
 // Functions
 	void parseRequest(std::string buffer);
+
+// Member Functions
+	
+
 // Getters
 	std::string getMethod();
 	std::string getPathTarget();

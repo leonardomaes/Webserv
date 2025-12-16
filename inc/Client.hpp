@@ -14,7 +14,7 @@
 
 #include "Webserv.hpp"
 #include "Request.hpp"
-#include "Response.hpp"
+#include "Response/Response.hpp"
 #include "Config.hpp"
 #include "Utils.hpp"
 

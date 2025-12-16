@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../inc/Response.hpp"
+#include "../../inc/Response/Response.hpp"
 
 Response::Response()
 {
@@ -172,9 +172,8 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
 	printMsg(obj.getPathTarget() + " (target)");
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
-
 	// GET (text) response body, based in http code
-	// *******************************************************************	// TO DO
+	// *******************************************************************	// TO DO	(Pointer to member function)
 	std::string header = this->getStatus(obj);
 	std::string body = this->getContent(obj);
 	printMsg(header + " (header)");

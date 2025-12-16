@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include "Webserv.hpp"
-#include "Request.hpp"
-#include "Utils.hpp"
+#include "../Webserv.hpp"
+#include "../Request.hpp"
+#include "../Utils.hpp"
 
 class Response
 {

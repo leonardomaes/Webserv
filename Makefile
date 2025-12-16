@@ -22,7 +22,7 @@ BIN_DIR := bin
 
 # Sources & Objects
 SRC =	$(SRC_DIR)/main.cpp $(SRC_DIR)/Server.cpp $(SRC_DIR)/Client.cpp \
-		$(SRC_DIR)/Request.cpp $(SRC_DIR)/Response.cpp $(SRC_DIR)/Config.cpp \
+		$(SRC_DIR)/Request.cpp $(SRC_DIR)/Response/Response.cpp $(SRC_DIR)/Config.cpp \
 		$(SRC_DIR)/Signal.cpp $(SRC_DIR)/Utils.cpp 
 
 OBJ = 	$(SRC:$(SRC_DIR)/%.cpp=$(BIN_DIR)/%.o)
@@ -44,6 +44,7 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BIN_DIR)
 
 $(BIN_DIR):
 			mkdir -p $(BIN_DIR)
+			mkdir -p $(BIN_DIR)/Response
 
 leaks: $(NAME)
 		$(VAL)
