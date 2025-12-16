@@ -16,7 +16,7 @@ void printMsg(std::string str)
 {
 	if (DBG_MSG == 1)
 	{
-		std::cout << CYAN << str << RESET << std::endl;
+		std::cout << DBG_COLOR << str << RESET << std::endl;
 	}
 	
 }

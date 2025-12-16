@@ -74,4 +74,5 @@
 #define BUFFER_SIZE 4096
 #define PORT 8080
 #define DBG_MSG 1
+#define DBG_COLOR CYAN
 
