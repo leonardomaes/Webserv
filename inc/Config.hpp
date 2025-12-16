@@ -50,7 +50,7 @@ struct ServerConfig {
 	// All the locations from this server
 	std::vector<LocationConfig> locations;
 
-	ServerConfig() : client_max_body_size(0) {}
+	ServerConfig() : client_max_body_size(0) {}				
 };
 
 // Struct to store each "location" block info
@@ -83,18 +83,101 @@ class Config
 
 		// 1. Lexer helping functions
 		void						initLexer(); 	// open file, set _current_char, reset counters
-		Token						nextToken();
+		Token						nextToken();	// goes over tokens and split them
 		void        				consumeWhiteSpace();
 		void						consumeComment();
-		void 						consumeKeywors
+		bool 						consumeKeywords(std::string &token_value, 
+										std::map<std::string, std::string> &parameters); 
+
+
+		// 2. Parser helping functions (make sense of the tokes and store it in the structs)
 		
+		/*
+		parseConfig() return a ServerConfig structure filled with the server info:
+		 - Use a temporary std::map<std::string, std::string> parameters and collects all data 
+		   like "listen" "host" "root";
+		 - On a separate struct separate all the locations the are found inside the server block;
+		 - Validate data abd build a ServerConfig from parameters + locations. 		
+		*/
+	    ServerConfig parseServerBlock();
+
+		/*
+		parseServerBody() idea is to parse all directives that are inside a sever block:
+		 - follows kuninoto Lexer::consumeKeyword logic (and mix with Server::Server logic);
+		 - when it findes a location, it delegates the parsing into parseLocationBlock();
+		*/
+		void parseServerBody(std::map<std::string, std::string> &serverParams, 
+			stinitLexerd::vector<LocationConfig> &locations);
+
+		/*
+		parseLocationBlock() parses "location <path> { ... }" block pattern and returns a LocationConfig struct. It must:
+		 - allow only server forbiden keywords (allow_methods, cgi_path, ...)
+		 - allow only one falue for each parameter (except for allow_methods) 
+		*/
+		void parseLocationBlock(const std::string &firstLocationPath):
+
+		/*
+		buildServerConfig() grabs all the info (parameters and locations), validates them and delivers the ServerConfig data;
+		Validations made:
+		 - All needed info is present;
+		 - Forbidden keywords at the Server level;
+		 - Normalize info (e.g. normalize root, check error_page path, parse numbers, etc.)
+		*/
+		ServerConfig buildServerConfig(const std:map<std::sting, std::string> &serverParams,
+			std::vector<LocationConfig> &locations) const;
 
 	public:
-		Config();
-		Config(const Config& obj);
-		// Config& operator=(const Config& obj);
-		~Config();
-		
+
+		/*
+		Each Config object created will be connect to a specific config file;
+		TO DECIDE: if the parser is iniciated in the constructor (automatic when object is created) or independently (need to be called)
+		*/
 		Config(const std::string path);
-		bool parseConfig();     //parse config file and return true if sucess
+
+		Config();
+		Config(const Config &other);
+		Config& operator=(const Config& other);
+		~Config();
+
+		/*
+		parseConfig() simply parses the config file. Steps:
+		 - Initialize the initLexer() function on _path;
+		 - Parse repeatedly the server {...} blocks int ServerConfig objects;
+		 - Store them in the _servers vector.
+		Returns 1 on sucess or thows an exception if the parsing fails.
+		*/
+		bool parseConfig();
+
+		/*
+		Getter for access the server configurations. Each entry Server confog corresponds to a "server { ... }" block from the file. 
+		NOTE FOR LATER: Check later if needed. 
+		*/
+		const std::vector<ServerConfig> &getServers() const;
+
+
+
+		Class ParseException : public std::exception
+		{
+			public:
+		}
+
+
+
+    class ParseException : public std::exception {
+    public:
+        explicit ParseException(const std::string& msg) : _msg(msg) {}
+        virtual const char* what() const throw() { return _msg.c_str(); }
+        ~ParseException() throw() {}
+    private:
+        std::string _msg;
+    };
+
+
+
+
+
+
+		
+
+
 };

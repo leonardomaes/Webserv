@@ -55,3 +55,6 @@ bool Config::parseConfig()
     return (true);
 
 }
+
+//getter for _servers
+const std::vector<ServerConfig>& getServers() const { return _servers; }
