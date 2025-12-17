@@ -154,22 +154,17 @@ class Config
 		*/
 		const std::vector<ServerConfig> &getServers() const;
 
-
-
-		Class ParseException : public std::exception
+		// costumized exception to deal with parsing errors
+		class ParseException : public std::exception
 		{
+			private:
+				std::string _msg;		
+			
 			public:
-		}
-
-
-
-    class ParseException : public std::exception {
-    public:
-        explicit ParseException(const std::string& msg) : _msg(msg) {}
-        virtual const char* what() const throw() { return _msg.c_str(); }
-        ~ParseException() throw() {}
-    private:
-        std::string _msg;
+				explicit ParseException(const std::string &msg) : _msg(msg) {}
+				virtual const char* what() const throw() {return _msg.c_str(); }
+				~ParseException() throw() {}
+		};
     };
 
 
