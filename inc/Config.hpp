@@ -107,14 +107,14 @@ class Config
 		 - when it findes a location, it delegates the parsing into parseLocationBlock();
 		*/
 		void parseServerBody(std::map<std::string, std::string> &serverParams, 
-			stinitLexerd::vector<LocationConfig> &locations);
+			std::vector<LocationConfig> &locations);
 
 		/*
 		parseLocationBlock() parses "location <path> { ... }" block pattern and returns a LocationConfig struct. It must:
 		 - allow only server forbiden keywords (allow_methods, cgi_path, ...)
 		 - allow only one falue for each parameter (except for allow_methods) 
 		*/
-		void parseLocationBlock(const std::string &firstLocationPath):
+		void parseLocationBlock(const std::string &firstLocationPath);
 
 		/*
 		buildServerConfig() grabs all the info (parameters and locations), validates them and delivers the ServerConfig data;
@@ -123,7 +123,7 @@ class Config
 		 - Forbidden keywords at the Server level;
 		 - Normalize info (e.g. normalize root, check error_page path, parse numbers, etc.)
 		*/
-		ServerConfig buildServerConfig(const std:map<std::sting, std::string> &serverParams,
+		ServerConfig buildServerConfig(const std::map<std::string, std::string> &serverParams,
 			std::vector<LocationConfig> &locations) const;
 
 	public:
@@ -165,14 +165,4 @@ class Config
 				virtual const char* what() const throw() {return _msg.c_str(); }
 				~ParseException() throw() {}
 		};
-    };
-
-
-
-
-
-
-		
-
-
 };
