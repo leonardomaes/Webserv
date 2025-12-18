@@ -93,11 +93,11 @@ bool Config::parseConfig()
 
     try                 // here we look for the server keyword and we parse the full block inside
     {
-        for (;;)
+        while (1)
         {
             Token tok = nextToken();
 
-            if (tol.type == TOK_EOF)
+            if (toK.type == TOK_EOF)
                 break;
 
             if (tok.type = TOK_KEYWORD && tok.value == "server")
