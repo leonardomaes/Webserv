@@ -14,6 +14,9 @@
 
 #include <string>
 #include <fstream>
+#include <iostream>		// for std::cerr (check if needed)
+#include <stdexcept> 	// for std::runtime_error (check if needed)
+#include <cctype> 		// for std::isspace, std::isalpha, etc.
 
 /*
 This class will be responsible for:
