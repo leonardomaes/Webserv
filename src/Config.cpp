@@ -105,6 +105,8 @@ bool Config::parseConfig()
                 Token braceTok = nextToken();       //checks if token after server is a '{'
                 if (braceTok.type != TOK_LCURLY)
                     throw ParseException("line" + ntos(_line_nr) + ": expected '{' after 'server'");            
+                
+                ServerConfig server = parseServerBlock();
             }    
 
             // to continue the logic here...
@@ -222,7 +224,7 @@ Token Config::nextToken()
                 _seen_server = true;
 
             Token t;
-            t.type = TOK_KEYWORD
+            t.type = TOK_KEYWORD;
             t.value = value;
             return (t);
         }
@@ -236,7 +238,7 @@ Token Config::nextToken()
     // some EOF final validations and EOF token
     if (_bracket_depth != 0)
         throw ParseException("config file: uneven curly brackets");
-    if (!_seen_server)~
+    if (!_seen_server)
         throw ParseException("config file: no server block was found");
     
     Token t;
@@ -263,5 +265,61 @@ void Config::consumeComment()
     {
         int c = _file.get();
         _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////// PARSER HELPERS //////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ServerConfig Config::parseServerBlock()
+{
+    // temp storage for the server parameters
+    std::map<std::string, std::string> serverParams;
+
+    // vector of all locations thar belong to this server
+    std::vector<LocationConfig> locations;
+
+    // parse the server body part
+    parseServerBody(serverParams, locations);
+
+    // converts maps of info into a structured ServerConfig (with validations)
+    // returns that Serverconfig
+    return (buildServerConfig(serverParams, locations));
+}
+
+void Config::parseServerBody(std::map<std::string, std::string> &serverParams, std::vector<LocationConfig> &locations)
+{
+    while (1)
+    {
+        Token tok = nextToken();
+
+        if (tok.type == TOK_RCURLY)
+            break;  //condition to end this server block
+
+        if (tok.type != TOK_KEYWORD)
+            throw ParseException("line " + ntos(_line_nr) + 
+                                ": expected a keyword inside server block");
+        
+        // locations handling
+        if (tok.value == "location")
+        {
+            // we need the location paht and its body
+            // we use consumeKeyword to read "location <path> {" into a temp map
+            std::map<std::string, std::string> locParams;
+            std::string key = tok.value;
+            consumeKeyword(key, locParams);
+            // locParams["location"] now holds the path string
+            std::string path = locParams["location"];
+
+            LocationConfig loc = parseLocationBlock(path);
+            locations.push_back(loc);
+        }
+        else
+        {
+            // reuse consumeKeyword to fill serverParams
+            std::string key = tok.value;
+            consumeKeyword(key, serverParams);
+        }
     }
 }

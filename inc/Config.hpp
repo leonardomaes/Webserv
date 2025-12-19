@@ -89,7 +89,7 @@ class Config
 		Token						nextToken();	// goes over tokens and split them
 		void        				consumeWhiteSpace();
 		void						consumeComment();
-		bool 						consumeKeywords(std::string &token_value, 
+		bool 						consumeKeyword(std::string &token_value, 
 										std::map<std::string, std::string> &parameters); 
 
 
