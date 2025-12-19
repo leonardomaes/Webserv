@@ -87,25 +87,27 @@ Config::~Config()
 
 bool Config::parseConfig()
 {
-    _servers.clear()    // clears any previous parsed data (good practive)
+    _servers.clear();    // clears any previous parsed data (good practive)
 
-    initLexer()         // initialize lexer, opens file and initiate counters
+    initLexer();         // initialize lexer, opens file and initiate counters
 
-    try                 // here we look for the server keyword and we parse the full block inside
+    try                  // here we look for the server keyword and we parse the full block inside
     {
         while (1)
         {
             Token tok = nextToken();
 
-            if (toK.type == TOK_EOF)
+            if (tok.type == TOK_EOF)
                 break;
 
-            if (tok.type = TOK_KEYWORD && tok.value == "server")
+            if (tok.type == TOK_KEYWORD && tok.value == "server")
             {
                 Token braceTok = nextToken();       //checks if token after server is a '{'
-                if (braceTok != TOK_LCURLY)
+                if (braceTok.type != TOK_LCURLY)
                     throw ParseException("line" + ntos(_line_nr) + ": expected '{' after 'server'");            
             }    
+
+            // to continue the logic here...
         }
     }
     catch (const std::exception &e)
@@ -127,7 +129,7 @@ void Config::initLexer()
 
     // checking file extension 
     std::string::size_type dotPos = _path.find_last_of('.');
-    if (dotPos == std::string:npos)
+    if (dotPos == std::string::npos)
         throw ParseException("config file: no extension found");
 
     std::string extension = _path.substr(dotPos);
@@ -144,11 +146,67 @@ void Config::initLexer()
     _seen_server = false;
 
     int c = _file.get();
-    _current_char = (c == EOF) ? '\0' : std::static_cast<char>(c);    
+    _current_char = (c == EOF) ? '\0' : static_cast<char>(c);    
 }
 
 
+//This funtion returns the next token from the stream. Only returns a token if it is a valid keyword (TOK_KEYWORD)
+Token Config::nextToken()
+{
+    std::string value;
+
+    while (_file.good())
+    {
+        // consume and ignore new lines
+        if (_current_char == '\n')  
+        {
+            ++_line_nr;
+            int c = _file.get();
+            _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+            continue;
+        }
+        // skip whitespace
+        if (std::isspace(static_cast<unsigned char>(_current_char)))
+        {
+            consumeWhiteSpace();
+            continue;
+        }
+        // skip comments (start with #)
+        if (_current_char == '#')
+        {
+            consumeComment();
+            continue;
+        }
+        // curly braces
+        if (_current_char == '{')
+        {
+            ++_bracket_depth;
+            int c = _file.get();
+            //continue logic ...
+        }
 
 
-//getter for _servers
-const std::vector<ServerConfig>& getServers() const { return _servers; }
+        //continue logic ...
+    }
+}
+
+void Config::consumeWhiteSpace()
+{
+    while (_file.good() &&
+        std::isspace(static_cast<unsigned char>(_current_char)))
+    {
+        if (_current_char == '\n')
+            return; //allow nextToken to increment Line Numeber
+        int c = _file.get();
+        _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+    }
+}
+
+void Config::consumeComment()
+{
+    while (_file.good() && _current_char != '\n')
+    {
+        int c = _file.get();
+        _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+    }
+}

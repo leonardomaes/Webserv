@@ -76,7 +76,7 @@ class Config
 {
 	private: 
 		std::string 				_path;
-		std::vector<ServerConfig>	_servers;
+		std::vector<ServerConfig> 	_servers;
 
 		std::ifstream				_file;
 		char						_current_char;
@@ -135,7 +135,7 @@ class Config
 		Each Config object created will be connect to a specific config file;
 		TO DECIDE: if the parser is iniciated in the constructor (automatic when object is created) or independently (need to be called)
 		*/
-		Config(const std::string path);
+		Config(const std::string &path);
 
 		Config();
 		Config(const Config &other);
