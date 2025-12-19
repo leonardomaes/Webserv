@@ -177,11 +177,41 @@ Token Config::nextToken()
             consumeComment();
             continue;
         }
-        // curly braces
+        // left curly brace
         if (_current_char == '{')
         {
             ++_bracket_depth;
             int c = _file.get();
+            _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+            Token t;
+            t.type = TOK_LCURLY;
+            t.value = "{";
+            return (t); 
+        }
+        // right curly brace
+        if (_current_char == '}')
+        {
+            --_bracket_depth;
+            int c = _file.get();
+            _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+            Token t;
+            t.type = TOK_RCURLY;
+            t.value = '}';
+            return (t);
+        }
+        // keywords
+        if (std::isalpha(static_cast<unsigned char>(_current_char)))
+        {
+            value.clear();
+            value += _current_char;
+            int c = _file.get();
+            _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+            
+            // We are no calling consumeKeyword here (like above), we just complete the keyword
+            while (_file.good() &&
+                ())   
+
+
             //continue logic ...
         }
 
