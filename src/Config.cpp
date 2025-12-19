@@ -149,7 +149,6 @@ void Config::initLexer()
     _current_char = (c == EOF) ? '\0' : static_cast<char>(c);    
 }
 
-
 //This funtion returns the next token from the stream. Only returns a token if it is a valid keyword (TOK_KEYWORD)
 Token Config::nextToken()
 {
@@ -207,17 +206,43 @@ Token Config::nextToken()
             int c = _file.get();
             _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
             
-            // We are no calling consumeKeyword here (like above), we just complete the keyword
+            // we are not calling consumeKeyword here (like above), we just complete the keyword
             while (_file.good() &&
-                ())   
+                (std::isalnum(static_cast<unsigned char>(_current_char)) ||
+                _current_char == '_'))
+            {
+                value += _current_char;
+                c = _file.get();
+                _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+            }
+            
+            // decided to accept any word as a keyword and let the parser check if the keyword is valide later 
+            // but we can change this behaviour later if needed
+            if (value == "server")
+                _seen_server = true;
 
-
-            //continue logic ...
+            Token t;
+            t.type = TOK_KEYWORD
+            t.value = value;
+            return (t);
         }
-
-
-        //continue logic ...
+        // for any other unusual character (not whitspace, comment, brace, etc.) we simply throw an exception
+        std::string msg = "line " + ntos(_line_nr) + ": unexpected character '";
+        msg += _current_char;
+        msg += "'";
+        throw ParseException(msg);
     }
+
+    // some EOF final validations and EOF token
+    if (_bracket_depth != 0)
+        throw ParseException("config file: uneven curly brackets");
+    if (!_seen_server)~
+        throw ParseException("config file: no server block was found");
+    
+    Token t;
+    t.type = TOK_EOF;
+    t.value = "";
+    return (t);    
 }
 
 void Config::consumeWhiteSpace()
