@@ -109,8 +109,7 @@ class Config
 		 - follows kuninoto Lexer::consumeKeyword logic (and mix with Server::Server logic);
 		 - when it findes a location, it delegates the parsing into parseLocationBlock();
 		*/
-		void parseServerBody(std::map<std::string, std::string> &serverParams, 
-			std::vector<LocationConfig> &locations);
+		void parseServerBody(std::map<std::string, std::string> &serverParams, std::vector<LocationConfig> &locations);
 
 		/*
 		parseLocationBlock() parses "location <path> { ... }" block pattern and returns a LocationConfig struct. It must:
