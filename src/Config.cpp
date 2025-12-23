@@ -27,6 +27,16 @@ static std::string ntos(std::size_t n)
     return (oss.str());
 }
 
+static bool isOnlyWhiteSpaces(const std::string &s)
+{
+    for (std::string::const_iterator it = s.begin(); it != s.end(); ++it)
+    {
+        if (!std::isspace(static_cast<unsigned char>(*it)))
+            return (false);
+    }
+    return (true);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// CANONICAL + CONSTRUCTOR ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -266,6 +276,49 @@ void Config::consumeComment()
         int c = _file.get();
         _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
     }
+}
+
+// this function fills parameters at a server or at a location level:
+// - assumes a token_value that contains the keywod name
+// - reads if the value until ';' or '}'
+// - populates a map parameters[token_value] = parameter_value
+void Config::consumeKeyword(std::string &token_value, 
+                            std::map<std::string, std::string> &parameters)
+{
+    std::string parameter_value;
+
+    // after reading the keyword, _current_char is the next char from file, so we skip the space after keyword
+    if (_current_char == ' ')
+        consumeWhiteSpace();
+
+    if (_current_char == ';')
+        throw ParseException("line " + ntos(_line_nr) + ": no value found for keyword \"" + token_value + "\"");
+    
+    // special case for handling "location" <path> "{"
+    if (token_value == "location")
+    {
+        while (_file.good() && _current_char != '{')
+        {
+            if (_current_char == '\n')
+                throw ParseException("line " + ntos(_line_nr) + ": missing '{' after location");
+            parameter_value += _current_char;
+            int c = _file.get();
+            _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+            if (_current_char == '{')
+                ++_bracket_depth;
+            if (parameter_value.empty() || isOnlyWhiteSpaces(parameter_value))
+                throw ParseException("line: " + ntos(_line_nr) + ": no value found for keyword \"" + token_value + "\"");
+            parameters[token_value] = parameter_value;
+            return;          
+        }
+    }
+
+    // for the generic case keyword <value> [this handles the case for one value only]
+    if (_current_char == ' ')
+        consumeWhiteSpace();
+    
+    // to continue implementation here
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
