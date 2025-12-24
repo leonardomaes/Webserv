@@ -282,8 +282,7 @@ void Config::consumeComment()
 // - assumes a token_value that contains the keywod name
 // - reads if the value until ';' or '}'
 // - populates a map parameters[token_value] = parameter_value
-void Config::consumeKeyword(std::string &token_value, 
-                            std::map<std::string, std::string> &parameters)
+void Config::consumeKeyword(std::string &token_value, std::map<std::string, std::string> &parameters)
 {
     std::string parameter_value;
 
@@ -317,8 +316,22 @@ void Config::consumeKeyword(std::string &token_value,
     if (_current_char == ' ')
         consumeWhiteSpace();
     
-    // to continue implementation here
+    // continue adding the value from the file into parameter_value
+    while(_file.good() && _current_char != ';')
+    {
+        if (_current_char == '\n')
+            throw ParseException("line " + ntos(_line_nr) + ": Missing ';' after \"" + token_value + "\"");
+        parameter_value += _current_char;
+        int c = _file.get();
+        _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+    }
     
+    //parameters map entry
+    parameters[token_value] = parameter_value;
+    
+    // consume ';'
+    int c = _file.get();
+    _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -357,7 +370,7 @@ void Config::parseServerBody(std::map<std::string, std::string> &serverParams, s
         // locations handling
         if (tok.value == "location")
         {
-            // we need the location paht and its body
+            // we need the location path and its body
             // we use consumeKeyword to read "location <path> {" into a temp map
             std::map<std::string, std::string> locParams;
             std::string key = tok.value;
@@ -370,9 +383,113 @@ void Config::parseServerBody(std::map<std::string, std::string> &serverParams, s
         }
         else
         {
-            // reuse consumeKeyword to fill serverParams
+            // reusing consumeKeyword to fill serverParams
             std::string key = tok.value;
             consumeKeyword(key, serverParams);
         }
     }
+}
+
+LocationConfig Config::parseLocationBlock(const std::string &firstLocationPath)
+{
+    LocationConfig loc;
+    loc.path = firstLocationPath;
+
+    // creating a temporary map for this location raw info (root, allow_methods, etc...)
+    std::map<std::string, std::string> locParams;
+
+    while (1)
+    {
+        Token tok = nextToken();
+
+        if (tok.type == TOK_RCURLY)
+            break; // break the loop when the location block ends
+        
+        if (tok.type != TOK_KEYWORD)
+            throw ParseException("line " + ntos(_line_nr) + ": expected keyword not found inside location block");
+        
+        std::string key = tok.value;
+        consumeKeyword(key, locParams);
+    }
+
+    // converts locParams temp map into the LocationConfig fields
+    std::map<std::string, std::string>::const_iterator it;
+
+    it = locParams.find("root");
+    if (it != locParams.end())  //if key is found place it in the LocationConfig struct
+        loc.root = it ->second;
+    
+    it = locParams.find("return");
+    if (it != locParams.end())
+        loc.redirect = it->second;
+    
+    it = locParams.find("try_file");
+    if (it != locParams.end())
+        loc.try_file = it->second;
+    
+    it = locParams.find("upload_to");
+    if (it != locParams.end())
+        loc.upload_to = it->second;
+
+    it = locParams.find("auto_index");
+    if (it != locParams.end())
+        loc.auto_index = (it->second == "on" || it->second == "true"); // check later if this use is enough (mimmics ngix autoindex)
+    
+    it = locParams.find("cgi_path");
+    if (it != locParams.end())
+    {
+        loc.has_cgi = true;
+        loc.cgi_path = it->second;
+    }
+
+    it = locParams.find("cgi_ext");
+    if (it != locParams.end())
+        loc.cgi_ext = it->second;
+    
+    it = locParams.find("allow_methods");
+    if (it != locParams.end())
+    {
+        // simple parser that parses methods by spaces
+        std::string value = it->second;
+        std::string current;
+        for (size_t i = 0; i < value.size(); ++i) 
+        {
+            char ch = value[i];
+            if (ch == ' ') 
+            {
+                if (!current.empty()) 
+                {
+                    loc.allow_methods.push_back(current);
+                    current.clear();
+                }
+            } 
+            else 
+            {
+                current += ch;
+            }
+        }
+        if (!current.empty())
+            loc.allow_methods.push_back(current);
+    }
+    return (loc);
+}
+
+/*
+Build a ServerConfig from serverParams (temp map) and locations
+Here we also implement additions validations needed
+	- mandatory directives needed in the config file
+	- forbiden directives in server
+	- normalization, number validation, etc. 
+*/
+ServerConfig Config::buildServerConfig(
+	const std::map<std::string, std::string> &serverParams,
+	const std::vector<LocationConfig> &locations)
+{
+	ServerConfig conf;
+
+	// minimal mandatory keys (we can adapt and add more later)
+	static const char* mandatoryKeys[] = {"listen", "host", "root", "index"};
+	const std::size_t
+
+
 }

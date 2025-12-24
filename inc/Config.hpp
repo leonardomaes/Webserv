@@ -89,9 +89,7 @@ class Config
 		Token						nextToken();	// goes over tokens and split them
 		void        				consumeWhiteSpace();
 		void						consumeComment();
-		bool 						consumeKeyword(std::string &token_value, 
-										std::map<std::string, std::string> &parameters); 
-
+		void 						consumeKeyword(std::string &token_value, std::map<std::string, std::string> &parameters);
 
 		// 2. Parser helping functions (make sense of the tokes and store it in the structs)
 		
@@ -116,7 +114,7 @@ class Config
 		 - allow only server forbiden keywords (allow_methods, cgi_path, ...)
 		 - allow only one falue for each parameter (except for allow_methods) 
 		*/
-		void parseLocationBlock(const std::string &firstLocationPath);
+		LocationConfig parseLocationBlock(const std::string &firstLocationPath);
 
 		/*
 		buildServerConfig() grabs all the info (parameters and locations), validates them and delivers the ServerConfig data;
@@ -168,3 +166,5 @@ class Config
 				~ParseException() throw() {}
 		};
 };
+
+
