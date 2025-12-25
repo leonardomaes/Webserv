@@ -123,8 +123,7 @@ class Config
 		 - Forbidden keywords at the Server level;
 		 - Normalize info (e.g. normalize root, check error_page path, parse numbers, etc.)
 		*/
-		ServerConfig buildServerConfig(const std::map<std::string, std::string> &serverParams,
-			std::vector<LocationConfig> &locations) const;
+		ServerConfig buildServerConfig(const std::map<std::string, std::string> &serverParams, const std::vector<LocationConfig> &locations) const;
 
 	public:
 

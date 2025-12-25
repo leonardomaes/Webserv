@@ -481,15 +481,47 @@ Here we also implement additions validations needed
 	- forbiden directives in server
 	- normalization, number validation, etc. 
 */
-ServerConfig Config::buildServerConfig(
-	const std::map<std::string, std::string> &serverParams,
-	const std::vector<LocationConfig> &locations)
+ServerConfig Config::buildServerConfig(const std::map<std::string, std::string> &serverParams, const std::vector<LocationConfig> &locations) const 
 {
 	ServerConfig conf;
+    std::map<std::string, std::string>::const_iterator it;
 
-	// minimal mandatory keys (we can adapt and add more later)
-	static const char* mandatoryKeys[] = {"listen", "host", "root", "index"};
-	const std::size_t
+	// only mandatory keys (we can adapt and add more later)
+	static const char* mandatoryKeys[] = {"listen", "root"};
+	const size_t mandatoryCount = sizeof(mandatoryKeys) / sizeof(mandatoryKeys[0]);
 
+    for(size_t i = 0; i < mandatoryCount; ++i)
+    {
+        if (serverParams.find(mandatoryKeys[i]) == serverParams.end())
+            throw ParseException("no provided value for " + std::string(mandatoryKeys[i]));
+    }
 
+    // mandatory fields
+    conf.listen = serverParams.find("listen")->second;
+    conf.root   = serverParams.find("root")->second;
+
+    it = serverParams.find("host");
+    conf.host = (it != serverParams.end()) ? it->second : "0.0.0.0"; // key value or default
+
+    it = serverParams.find("index");
+    conf.index = (it != serverParams.end()) ? it->second : "index.html"; // key value or default
+
+    it = serverParams.find("server_name");
+    if (it != serverParams.end())
+        conf.server_name = it->second;
+      
+    it = serverParams.find("error_page");
+    if (it != serverParams.end())
+        conf.error_page = it->second;
+
+    it = serverParams.find("client_max_body_size");
+    if (it != serverParams.end())
+    {
+        // very simple parsing that can be updated later (if needed). Now it accepts only numbers in bytes. 
+        std::istringstream iss(it->second);
+        std::size_t sz = 0;
+        if (!(iss >> sz) || !iss.eof())
+            throw ParseException("invalid client_max_body_size value \"" + it->second + "\"");
+        conf.client_max_body_size = sz;
+    }
 }
