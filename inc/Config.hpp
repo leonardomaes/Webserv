@@ -17,6 +17,8 @@
 #include <iostream>		// for std::cerr (check if needed)
 #include <stdexcept> 	// for std::runtime_error (check if needed)
 #include <cctype> 		// for std::isspace, std::isalpha, etc.
+#include <vector>
+#include <map>
 
 /*
 This class will be responsible for:
@@ -40,22 +42,6 @@ struct Token {
 	std::string value; // e.g. server, location, etc. 
 };
  
-// Struct to store each "server" block info
-struct ServerConfig {
-	std::string		listen;
-	std::string		host;
-	std::string		server_name;
-	std::string		root;
-	std::string		index;
-	std::string		error_page;
-	std::size_t		client_max_body_size;
-
-	// All the locations from this server
-	std::vector<LocationConfig> locations;
-
-	ServerConfig() : client_max_body_size(0) {}				
-};
-
 // Struct to store each "location" block info
 struct LocationConfig {
 	std::string					path;
@@ -70,6 +56,22 @@ struct LocationConfig {
 	std::string					upload_to;
 
 	LocationConfig() : auto_index(false), has_cgi(false) {}
+};
+
+// Struct to store each "server" block info
+struct ServerConfig {
+	std::string		listen;
+	std::string		host;
+	std::string		server_name;
+	std::string		root;
+	std::string		index;
+	std::string		error_page;
+	std::size_t		client_max_body_size;
+
+	// All the locations from this server
+	std::vector<LocationConfig> locations;
+
+	ServerConfig() : client_max_body_size(0) {}				
 };
 
 class Config

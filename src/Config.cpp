@@ -112,21 +112,28 @@ bool Config::parseConfig()
 
             if (tok.type == TOK_KEYWORD && tok.value == "server")
             {
-                Token braceTok = nextToken();       //checks if token after server is a '{'
+                Token braceTok = nextToken();       // checks if token after server is a '{'
                 if (braceTok.type != TOK_LCURLY)
                     throw ParseException("line" + ntos(_line_nr) + ": expected '{' after 'server'");            
                 
                 ServerConfig server = parseServerBlock();
-            }    
-
-            // to continue the logic here...
+                _servers.push_back(server);         //store info in _servers
+            }
+            else
+            {
+                // Minimal grammar rule: anything else at top level is invalid
+                throw ParseException("line " + ntos(_line_nr) + ": unexpected token \"" + tok.value + "\"");
+            }
         }
+        // if we reach here parsing is succeded (more checks can be added here (e.g. duplicated listen))
+        return (true);
     }
     catch (const std::exception &e)
     {
         std::cerr << "Config parse error: " << e.what() << std::endl;     // check later with Leo if we somehow implement a more robust and integrated error module 
         return (false);
     }
+    return (true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -304,12 +311,12 @@ void Config::consumeKeyword(std::string &token_value, std::map<std::string, std:
             int c = _file.get();
             _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
             if (_current_char == '{')
-                ++_bracket_depth;
-            if (parameter_value.empty() || isOnlyWhiteSpaces(parameter_value))
-                throw ParseException("line: " + ntos(_line_nr) + ": no value found for keyword \"" + token_value + "\"");
-            parameters[token_value] = parameter_value;
-            return;          
+                ++_bracket_depth;   
         }
+        if (parameter_value.empty() || isOnlyWhiteSpaces(parameter_value))
+            throw ParseException("line: " + ntos(_line_nr) + ": no value found for keyword \"" + token_value + "\"");
+        parameters[token_value] = parameter_value;
+        return;      
     }
 
     // for the generic case keyword <value> [this handles the case for one value only]
@@ -524,4 +531,11 @@ ServerConfig Config::buildServerConfig(const std::map<std::string, std::string> 
             throw ParseException("invalid client_max_body_size value \"" + it->second + "\"");
         conf.client_max_body_size = sz;
     }
+
+    // atach locations
+    conf.locations = locations;
+
+    // We can add further checks (e.g. ports range) if needed
+    return conf;
+
 }
