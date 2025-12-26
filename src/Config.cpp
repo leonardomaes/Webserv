@@ -13,6 +13,18 @@
 #include "../inc/Config.hpp"
 #include "../inc/Webserv.hpp"
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////// DEBUGGING ///////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+void Config::debugPrintAllServers() const
+{
+    for (size_t i = 0; i < _servers.size(); ++i)
+    {
+        std::cout << "\n### SERVER " << i << " ###\n";
+        _servers[i].debugPrint();
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// HELPER FUNCTIONS ///////////////////////////////
@@ -59,7 +71,12 @@ Config::Config(const std::string &path) :
     _line_nr(0),
     _bracket_depth(0),
     _seen_server(false)
-{ parseConfig(); }
+{ 
+    parseConfig();
+    #ifdef DEBUG_CONFIG
+    debugPrintAllServers();
+    #endif
+}
 
 Config::Config(const Config &other) :
     _path(other._path),
@@ -144,7 +161,6 @@ void Config::initLexer()
 {
     if (_file.is_open())        // guarantees file is close and can be opened later
         _file.close();
-
 
     // checking file extension 
     std::string::size_type dotPos = _path.find_last_of('.');

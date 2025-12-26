@@ -20,6 +20,8 @@
 #include <vector>
 #include <map>
 
+#define DEBUG_CONFIG
+
 /*
 This class will be responsible for:
 - Open and read the .conf file
@@ -56,6 +58,23 @@ struct LocationConfig {
 	std::string					upload_to;
 
 	LocationConfig() : auto_index(false), has_cgi(false) {}
+
+	// FOR DEBUGGING PORPUSE ONLY - DELETE LATER
+	void debugPrint() const
+    {
+        std::cout << "path: " << path << "\n";
+        std::cout << "root: " << root << "\n";
+        std::cout << "redirect: " << redirect << "\n";
+        std::cout << "auto_index: " << auto_index << "\n";
+        std::cout << "try_file: " << try_file << "\n";
+        std::cout << "upload_to: " << upload_to << "\n";
+        std::cout << "cgi_path: " << cgi_path << "\n";
+        std::cout << "cgi_ext: " << cgi_ext << "\n";
+        std::cout << "allow_methods: ";
+        for (size_t i = 0; i < allow_methods.size(); ++i)
+            std::cout << allow_methods[i] << " ";
+        std::cout << "\n";
+    }
 };
 
 // Struct to store each "server" block info
@@ -71,7 +90,28 @@ struct ServerConfig {
 	// All the locations from this server
 	std::vector<LocationConfig> locations;
 
-	ServerConfig() : client_max_body_size(0) {}				
+	ServerConfig() : client_max_body_size(0) {}
+	
+	// FOR DEBUGGING PORPUSE ONLY - DELETE LATER
+	void debugPrint() const
+    {
+        std::cout << "=== SERVER CONFIG ===\n";
+        std::cout << "listen: " << listen << "\n";
+        std::cout << "host: " << host << "\n";
+        std::cout << "server_name: " << server_name << "\n";
+        std::cout << "root: " << root << "\n";
+        std::cout << "index: " << index << "\n";
+        std::cout << "error_page: " << error_page << "\n";
+        std::cout << "client_max_body_size: " << client_max_body_size << "\n";
+        std::cout << "locations count: " << locations.size() << "\n";
+
+        for (size_t i = 0; i < locations.size(); ++i)
+        {
+            std::cout << "\n--- Location " << i << " ---\n";
+            locations[i].debugPrint();
+        }
+        std::cout << "=====================\n";
+    }
 };
 
 class Config
@@ -165,6 +205,9 @@ class Config
 				virtual const char* what() const throw() {return _msg.c_str(); }
 				~ParseException() throw() {}
 		};
+
+		// FOR DEBUGGING ONLY
+		void debugPrintAllServers() const;
 };
 
 
