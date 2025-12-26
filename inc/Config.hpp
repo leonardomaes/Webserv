@@ -151,7 +151,6 @@ class Config
 
 		/*
 		Getter for access the server configurations. Each entry Server confog corresponds to a "server { ... }" block from the file. 
-		NOTE FOR LATER: Check later if needed. 
 		*/
 		const std::vector<ServerConfig> &getServers() const;
 
