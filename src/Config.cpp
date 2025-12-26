@@ -326,9 +326,15 @@ void Config::consumeKeyword(std::string &token_value, std::map<std::string, std:
             parameter_value += _current_char;
             int c = _file.get();
             _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
-            if (_current_char == '{')
-                ++_bracket_depth;   
         }
+        
+        if (_current_char == '{')
+        {
+            ++_bracket_depth;
+            int c = _file.get();
+            _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
+        }
+
         if (parameter_value.empty() || isOnlyWhiteSpaces(parameter_value))
             throw ParseException("line: " + ntos(_line_nr) + ": no value found for keyword \"" + token_value + "\"");
         parameters[token_value] = parameter_value;
