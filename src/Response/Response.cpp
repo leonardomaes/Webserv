@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:24:28 by lmaes            ###   ########.fr       */
+/*   Updated: 2025/12/30 12:15:26 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,6 +198,18 @@ void Response::handleGET(Request& obj, int eventFD)
 		sendFavicon(obj, eventFD);
 		return ;
 	}
+
+	// DIRECTORY LISTING
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+
+	// check if the path is a directory
+	struct stat pathStat;
+	if (stat(fullPath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode))
+	{
+		if (isAyt)
+	}
+
+	
 	
 	std::string header = this->getStatus(obj);
 	std::string body = this->getContent(obj);
@@ -293,6 +305,80 @@ void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
 	else
 		std::cout << "LOG:: " << GREEN << "> Sended Response (" << obj.getCode() << " - "
 					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// DIR LISTING //////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+bool Response::isAutoIndexEnabled(Request &obj)
+{
+	// identifying the request path
+	std::string path = obj.getPathTarget();
+
+	// match the request path with the correspondent location in config
+	const std::vector<ServerConfig> &servers = obj.getConfig()->getServers();
+
+	// CHECK THIS LATER WITH LEO: for now implementing the search for location on the first server, but ideally we need to match the search with the correct server (host and port)
+	// matching the request path with the correct location in config
+	if (servers.empty())
+		return (false);
+	
+	const ServerConfig &server = servers[0]; // TO IMPROVE THIS
+
+	// finding the correct location
+	const LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+	
+	for (size_t i = 0; i < server.locations.size(); ++i)
+	{
+		const LocationConfig &loc = server.locations[i];
+		// check if request path starts with location path 
+		if (path.find(loc.path) == 0)
+		{
+			if (loc.path.length() > longestMatch)
+			{
+				longestMatch = loc.path.length();
+				bestMatch = &loc;
+			}
+		}
+	}
+
+	// if we found a matching location, we return its auto_index falue (1 or 0)
+	if (bestMatch)
+		return (bestMatch->auto_index); // returns 1 if auto_index is 'on'
+	
+	// as a default
+	return (false);
+}
+
+void Response::handleDirectoryListing(Request &obj, int eventFD)
+{
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+	std::string uriPath = obj.getPathTarget();
+	
+	printMsg("Generatinng directory listing for: " + fullPath);
+
+	// generate the HTML body (helper function)
+	std::string body = generateDirectoryHTML(fullPath, uriPath);
+	if (body.empty())	//safeguard for failing to read directory
+	{
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+
+	// building the HTTP response (header + body)
+	std::stringstream ss;
+	ss << body.size();
+
+	std::string header = "HTTP/1.1 200 OK\r\n"
+						 "Content-Type: text/html; charset=UTF-8\r\n"
+						 "Content-Length: " + ss.str() + "\r\n"
+						 "Connection: close\r\n\r\n";
+	
+	
+						 
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

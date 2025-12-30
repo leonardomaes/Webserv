@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:25:57 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:25:58 by lmaes            ###   ########.fr       */
+/*   Updated: 2025/12/30 00:02:49 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,8 @@ public:
 	std::string getConnection();
 	int			getCode();
 	const std::string getErrorPage(int error);
+	Config *getConfig();	// RN: need to add this getter here to access the config info
+
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };
 };

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:26:07 by lmaes            ###   ########.fr       */
+/*   Updated: 2025/12/30 00:04:00 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,4 +207,9 @@ std::string Request::getConnection()
 const std::string Request::getErrorPage(int error)
 {
 	return _errorPage[error];
+}
+
+Config *Request::getConfig()
+{
+	return _conf;
 }
