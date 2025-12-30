@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/30 12:15:26 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2025/12/30 17:45:50 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -376,9 +376,129 @@ void Response::handleDirectoryListing(Request &obj, int eventFD)
 						 "Content-Length: " + ss.str() + "\r\n"
 						 "Connection: close\r\n\r\n";
 	
-	
-						 
+	std::string response = header + body;
 
+	// sending the response
+	send(eventFD, response.c_str(), response.size(), 0);
+
+	printMsg("Directory list sent successfully");
+}
+
+std::string Response::generateDirectoryHTML(const std::string &dirPath, const std::string &uriPath)
+{
+	DIR* dir = opendir(dirPath.c_str());
+	if (!dir)
+	{
+		std::cerr << "LOG:: " << RED << "Failed to open directory: " << dirPath << RESET << std::endl;
+		return "";
+	}
+
+	// stores directory entries
+	std::vector<std::string> directories;
+	std::vector<std::string> files;
+
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+
+		if (name == ".")	// skip current directory 
+			continue;
+
+		// Build full path for stat
+		std::string fullEntryPath = dirPath;
+		if (dirPath[dirPath.length() - 1] != '/')
+			fullEntryPath += "/";
+		fullEntryPath += name;
+
+		struct stat entryStat;
+		if (stat(fullEntryPath.c_str(), &entryStat) == 0)
+		{
+			if (S_ISDIR(entryStat.st_mode))
+				directories.push_back(name);
+			else
+				files.push_back(name);
+		}
+	}
+	closedir(dir);
+
+	// sort entries alphabetically
+	std::sort(directories.begin(), directories.end());
+	std::sort(files.begin(), files.end());
+
+	// ensure that uriPath ends with '/'
+	std::string basePath = uriPath;
+	if (!basePath.empty() && basePath[basePath.length() - 1] != '/')
+		basePath += "/";
+
+	// build HTML
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n"
+         << "<html>\n"
+         << "<head>\n"
+         << "    <meta charset=\"UTF-8\">\n"
+         << "    <title>Index of " << uriPath << "</title>\n"
+         << "    <style>\n"
+         << "        body { font-family: Arial, sans-serif; margin: 40px; }\n"
+         << "        h1 { color: #333; border-bottom: 2px solid #666; padding-bottom: 10px; }\n"
+         << "        table { width: 100%; border-collapse: collapse; margin-top: 20px; }\n"
+         << "        th { background-color: #f0f0f0; text-align: left; padding: 10px; border-bottom: 2px solid #666; }\n"
+         << "        td { padding: 8px; border-bottom: 1px solid #ddd; }\n"
+         << "        tr:hover { background-color: #f5f5f5; }\n"
+         << "        a { color: #0066cc; text-decoration: none; }\n"
+         << "        a:hover { text-decoration: underline; }\n"
+         << "        .dir { font-weight: bold; }\n"
+         << "        .icon { margin-right: 5px; }\n"
+         << "    </style>\n"
+         << "</head>\n"
+         << "<body>\n"
+         << "    <h1>Index of " << uriPath << "</h1>\n"
+         << "    <table>\n"
+         << "        <tr><th>Name</th><th>Type</th></tr>\n";
+
+	// adding a parent directory link (if not root)
+	if (uriPath != "/")
+	{
+		std::string parentPath = uriPath;
+		size_t lastSlash = parentPath.find_last_of('/');
+		if (lastSlash != std::string::npos && lastSlash > 0)
+			parentPath = parentPath.substr(0, lastSlash);
+		else
+			parentPath = "/";
+
+		html << "        <tr>\n"
+             << "            <td><a href=\"" << parentPath << "\">📁 ../</a></td>\n"
+             << "            <td>Directory</td>\n"
+             << "        </tr>\n";
+	}
+
+	// add directories
+	for (size_t i = 0; i < directories.size(); ++i)
+	{
+		html << "        <tr>\n"
+             << "            <td class=\"dir\"><a href=\"" << basePath << directories[i] << "/\">📁 " 
+             << directories[i] << "/</a></td>\n"
+             << "            <td>Directory</td>\n"
+             << "        </tr>\n";
+	}
+
+	// add files
+	for (size_t i = 0; i < files.size(); ++i)
+    {
+        html << "        <tr>\n"
+             << "            <td><a href=\"" << basePath << files[i] << "\">📄 " 
+             << files[i] << "</a></td>\n"
+             << "            <td>File</td>\n"
+             << "        </tr>\n";
+    }
+
+	html << "    </table>\n"
+		<< "    <hr>\n"
+		<< "    <p><em>Webserv/1.0 Server</em></p>\n"
+		<< "</body>\n"
+		<< "</html>\n";
+
+	return (html.str());	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
