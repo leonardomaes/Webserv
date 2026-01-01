@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/31 23:27:39 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/01 15:09:16 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,7 +130,7 @@ void Response::FillStatus()
 	_status[511] = "Network Authentication Required";
 }
 
-std::string Response::getContent(Request obj)	// Add dynamic error based in http code (TO DO)
+std::string Response::getContent(Request &obj)	// Add dynamic error based in http code (TO DO)
 {
 	std::string result;
 	std::string path = this->getRoot();
@@ -206,41 +206,44 @@ void Response::handleGET(Request& obj, int eventFD)
 	struct stat pathStat;
 	if (stat(fullPath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode))
 	{
-		if (S_ISDIR(pathStat.st_mode))
+		// is a directory
+		printMsg("Path is a directory: " + fullPath);
+
+		// try to serve index file
+		std::string indexPath = fullPath;
+		if (!indexPath.empty() && indexPath[indexPath.length() - 1] != '/')
+			indexPath += "/";
+		indexPath += "index.html";
+		
+		struct stat indexStat;
+		if (stat(indexPath.c_str(), &indexStat) == 0 && S_ISREG(indexStat.st_mode))
 		{
-			// is a directory
-			printMsg("Path is a directory: " + fullPath);
-
-			// try to serve index file
-			std::string indexPath = fullPath;
-			if (indexPath[indexPath.length() - 1] != '/')
-				indexPath += "/";
-			indexPath += "index.html";
-
-			struct stat indexStat;
-			if (stat(indexPath.c_str(), &indexStat) == 0 && S_ISREG(indexStat.st_mode))
+			// index file exists -> update the path and send it
+			printMsg("serving index file: " + indexPath);
+			std::string newPath = obj.getPathTarget();
+			if (newPath[newPath.length() - 1] != '/')
+				newPath += "/";
+			newPath += "index.html"; 
+			obj.setPathTarget(newPath);
+		}
+		else
+		{
+			// if no index file, check if autoindex is enabled
+			if (isAutoIndexEnabled(obj))
 			{
-				// index file exists -> send it and continue regular webserver activity
-				printMsg("serving index file: " + indexPath);
+				printMsg("Autoindex enabled, generating directory listing");
+				handleDirectoryListing(obj, eventFD);
+				return;
 			}
 			else
 			{
-				// if no index file, check if autoindex is enabled
-				if (isAutoIndexEnabled(obj))
-				{
-					printMsg("Autoindex enabled, generating directory listing");
-					handleDirectoryListing(obj, eventFD);
-					return;
-				}
-				else
-				{
-					// if autoindex is disabled and no index file, send 403 error
-					printMsg("Autoindex disabled and no index file - 403 Forbiden");
-					handleERROR(obj, 403, eventFD);
-					return;
-				}
-			}			
-		}
+				// if autoindex is disabled and no index file, send 403 error
+				printMsg("Autoindex disabled and no index file - 403 Forbiden");
+				handleERROR(obj, 403, eventFD);
+				return;
+			}
+		}			
+
 	}
 	
 	std::string header = this->getStatus(obj);
@@ -301,7 +304,7 @@ void Response::handleERROR(Request& obj, int error, int eventFD)
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Response starts here
-void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
+void Response::generateResponse(Request &obj, int epfd, int eventFD)		// TO DO	//RM: changed "Request obj" into "Request &obj"
 {
 	std::stringstream dbg_ss;
 	printMsg(obj.getPathTarget() + " (target)");
@@ -439,7 +442,7 @@ std::string Response::generateDirectoryHTML(const std::string &dirPath, const st
 
 		// Build full path for stat
 		std::string fullEntryPath = dirPath;
-		if (dirPath[dirPath.length() - 1] != '/')
+		if (!dirPath.empty() && dirPath[dirPath.length() - 1] != '/')
 			fullEntryPath += "/";
 		fullEntryPath += name;
 

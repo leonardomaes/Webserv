@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/30 00:04:00 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/01 15:03:54 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ Request::Request(const Request& obj)
 	_firstLine = obj._firstLine;
 	_responseCode = obj._responseCode;
 	_errorPage = obj._errorPage;
+	_conf = obj._conf;
 }
 
 // Request& Request::operator=(const Request& obj)
@@ -212,4 +213,13 @@ const std::string Request::getErrorPage(int error)
 Config *Request::getConfig()
 {
 	return _conf;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////// SETTER /////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+void Request::setPathTarget(const std::string &path)
+{
+    _pathTarget = path;
 }

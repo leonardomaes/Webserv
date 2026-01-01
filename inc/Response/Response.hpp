@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:09 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/30 00:10:39 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/01 14:42:54 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ private:
 	void FillStatus();
 
 	// Functions
-	std::string getContent(Request obj);
+	std::string getContent(Request &obj);
 	std::string getStatus(Request obj);
 public:
 	Response();
@@ -54,7 +54,7 @@ public:
 	// Response& operator=(const Response& obj);
 	~Response();
 // Functions
-	void generateResponse(Request obj, int epfd, int eventFD);
+	void generateResponse(Request &obj, int epfd, int eventFD);
 
 
 // Getters
