@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/01 15:09:16 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/01 15:23:11 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -351,6 +351,11 @@ bool Response::isAutoIndexEnabled(Request &obj)
 	// identifying the request path
 	std::string path = obj.getPathTarget();
 
+	// normalize the path (remove slash for comparing)
+	std::string normalizedPath = path;
+	if (normalizedPath.length() > 1 && normalizedPath[normalizedPath.length() - 1] == '/')
+		normalizedPath = normalizedPath.substr(0, normalizedPath.length() - 1);
+
 	// match the request path with the correspondent location in config
 	const std::vector<ServerConfig> &servers = obj.getConfig()->getServers();
 
@@ -359,7 +364,7 @@ bool Response::isAutoIndexEnabled(Request &obj)
 	if (servers.empty())
 		return (false);
 	
-	const ServerConfig &server = servers[0]; // TO IMPROVE THIS
+	const ServerConfig &server = servers[0]; // EVALUATE TO IMPROVE THIS
 
 	// finding the correct location
 	const LocationConfig* bestMatch = NULL;
@@ -368,13 +373,34 @@ bool Response::isAutoIndexEnabled(Request &obj)
 	for (size_t i = 0; i < server.locations.size(); ++i)
 	{
 		const LocationConfig &loc = server.locations[i];
-		// check if request path starts with location path 
-		if (path.find(loc.path) == 0)
+
+		// normalize location path
+		std::string locPath = loc.path;
+		if (locPath.length() > 1 && locPath[locPath.length() - 1] == '/')
+			locPath = locPath.substr(0, locPath.length() - 1);
+
+		// check if request path starts with location path
+		// checking first the exact match and then the prefix match followed by '/'
+		if (normalizedPath == locPath)
 		{
-			if (loc.path.length() > longestMatch)
+			// exact match
+			if (locPath.length() > longestMatch)
 			{
-				longestMatch = loc.path.length();
+				longestMatch = locPath.length();
 				bestMatch = &loc;
+			}
+		}
+		else if (normalizedPath.find(locPath) == 0)
+		{
+			// prefix match served after
+			if (normalizedPath.length() > locPath.length() && 
+			    normalizedPath[locPath.length()] == '/')
+			{
+				if (locPath.length() > longestMatch)
+				{
+					longestMatch = locPath.length();
+					bestMatch = &loc;
+				}
 			}
 		}
 	}
