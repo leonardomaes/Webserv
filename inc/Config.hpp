@@ -208,6 +208,9 @@ class Config
 
 		// FOR DEBUGGING ONLY
 		void debugPrintAllServers() const;
+
+
+		ServerConfig getServerConfig(int index);
 };
 
 

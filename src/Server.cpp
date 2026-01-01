@@ -115,7 +115,7 @@ void	Server::Start(Config *conf)
 				int client_fd = accept(this->_SocketFD, (sockaddr*)&this->_SocketAddress, &addrlen);
 				if (client_fd < 0)
 					continue;
-				this->_clients[client_fd] = Client(client_fd, epfd, conf);
+				this->_clients[client_fd] = Client(client_fd, epfd, conf->getServerConfig(0));	// Change 0 to index server TO DO
 				continue;
 			}
 			else if (events[i].events & EPOLLIN)

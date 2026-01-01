@@ -37,7 +37,7 @@ Client::~Client()
 {
 }
 
-Client::Client(int fd, int epfd, Config *conf) : _ClientFD(fd), _request(conf), _response()
+Client::Client(int fd, int epfd, ServerConfig conf) : _ClientFD(fd), _request(conf), _response()
 {
 	if (_ClientFD < 0)
 		throw ClientException("Accept failed");

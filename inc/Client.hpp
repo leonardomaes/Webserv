@@ -31,7 +31,7 @@ public:
 	Client(const Client& obj);
 	// Client& operator=(const Client& obj);
 	~Client();
-	Client(int fd, int epfd, Config *conf);
+	Client(int fd, int epfd, ServerConfig conf);
 
 // Getter
 	int getClientFD();

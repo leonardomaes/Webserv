@@ -570,3 +570,8 @@ const std::vector<ServerConfig> &Config::getServers() const
 {
     return (_servers);
 }
+
+ServerConfig Config::getServerConfig(int index)
+{
+	return _servers[index];
+}

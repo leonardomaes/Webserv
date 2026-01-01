@@ -25,6 +25,7 @@ private:
 	void handleGET(Request &obj, int eventFD);
 	void handlePOST(Request &obj, int eventFD);
 	void handleDELETE(Request &obj, int eventFD);
+	std::string defaultErrorPage(int error);
 	void handleERROR(Request& obj, int error, int eventFD);
 	void sendFavicon(Request obj, int eventFD);
 

@@ -47,7 +47,7 @@ Request::~Request()
 {
 }
 
-Request::Request(Config *conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
+Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
 {
 	_head["Host"] = "";
 	_head["Connection"] = "";
@@ -64,33 +64,13 @@ Request::Request(Config *conf) : _method(""), _pathTarget(), _protocol(""), _fir
 
 int Request::fileOpen(std::string target)
 {
-	std::string filename = "assets/html";	// Config file
+	std::string filename = this->_conf.root;	// Config file
 	filename.append(target);
 	std::ifstream file(filename.c_str(), std::ios::in);
 	if (!file.is_open())
 		return 0;
 	file.close();
 	return 1;
-}
-
-int Request::parsePath()		// TO DO   (Config File)
-{
-	if (this->_pathTarget == "/")					// Default case
-		this->_pathTarget = "/index.html";					// _pathTarget = _indexFile (config.hpp)
-	else if (this->_pathTarget == "/favicon.ico")	// Special case
-	{
-		if (this->_method != "GET")
-			return 405;
-		return 200;
-	}
-	else if (this->fileOpen(this->_pathTarget))		// Generic case
-		return 200;
-	else											// Error case
-	{
-		this->_pathTarget = "/error/404.html";
-		return 404;
-	}
-	return 200;
 }
 
 int Request::parseFirstLine(std::string line)
@@ -107,9 +87,6 @@ int Request::parseFirstLine(std::string line)
 	while (line[i] != ' ')
 		this->_pathTarget.insert(_pathTarget.end(), line[i++]);
 	i++;
-	// If _pathTarget is invalid (Parsing target path), then invalid page
-	if (code == 200)
-		code = this->parsePath();
 	while (line[i] != '\r')
 		this->_protocol.insert(_protocol.end(), line[i++]);
 	if (_protocol != "HTTP/1.1" && code == 200)
@@ -137,14 +114,87 @@ void Request::parseHeader(std::string line)
 		_head[key] = value;
 }
 
+int Request::validLocation(std::string filename)
+{	// Check if the location exist
+	size_t it_l = 0;
+	size_t best = _conf.locations.size();
+	size_t bestLen = 0;
+
+	for (size_t i = 0; i < _conf.locations.size(); i++)
+	{
+		const std::string& loc = _conf.locations[i].path;
+
+		if (filename.compare(0, loc.size(), loc) == 0)
+		{
+			if (loc.size() > bestLen)
+			{
+				best = i;
+				bestLen = loc.size();
+			}
+		}
+	}
+	if (best == _conf.locations.size())
+		return 404;
+
+	it_l = best;
+
+	// Check in the location for the allowed methods
+	bool allowed = false;
+	for (size_t i = 0; i < _conf.locations[it_l].allow_methods.size(); i++)
+	{
+		std::cout << "i >" << i << "<" << std::endl;
+		std::cout << "size >" << _conf.locations[it_l].allow_methods.size() << "<" << std::endl;
+		std::cout << "Allowed >" << _conf.locations[it_l].allow_methods[i] << "<" << std::endl;
+		std::cout << "Method >" << this->_method << "<" << std::endl;
+		if (_conf.locations[it_l].allow_methods[i] == this->_method)
+		{
+			std::cout << "TEST" << std::endl;
+			allowed = true;
+			break;
+		}
+	}
+	if (!allowed)
+		return 405;
+	return 200;
+}
+
+int Request::parsePath()		// TO DO   (Config File)
+{
+	if (this->_pathTarget == "/favicon.ico")	// Special case
+	{
+		if (this->_method != "GET")
+			return 405;
+		return 200;
+	}
+	int code = 200;
+	code = validLocation(this->_pathTarget);
+	if (code != 200)
+		return code;
+	if (this->fileOpen(this->_pathTarget))		// Generic case
+		return 200;
+	else											// Error case
+	{
+		this->_pathTarget = "/error/404.html";
+		return 404;
+	}
+	return 200;
+}
+
 int Request::parseConfig()		// Missing Config file to make
 {
-	if (this->_pathTarget == "/favicon.ico")
+	int code = 200;
+	// If _pathTarget is invalid (Parsing target path), then invalid page
+	if (code == 200)
+		code = this->parsePath();
+	if (code == 200)
 	{
-		_pathTarget = "/icon/favicon.ico";
+		if (this->_pathTarget == "/")
+			_pathTarget = _conf.index;
+		else if (this->_pathTarget == "/favicon.ico")
+			_pathTarget = "/icon/favicon.ico";			// Changes to icon dir
 	}
-	
-	return 200;
+	// std::cout << _pathTarget << std::endl;
+	return code;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -172,6 +222,7 @@ void Request::parseRequest(std::string buffer)
 	}
 	if (code == 200)
 		code = parseConfig();
+	// code = 404;			// DELETE ME
 	this->_responseCode = code;
 }
 

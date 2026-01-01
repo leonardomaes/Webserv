@@ -31,11 +31,12 @@ private:
 	std::map<int, std::string> _errorPage;
 
 	// Objs
-	Config *_conf;
+	ServerConfig _conf;
 
 	// Functions
 	int parseFirstLine(std::string line);
 	int	parsePath();
+	int validLocation(std::string filename);
 	int fileOpen(std::string filename);
 	void parseHeader(std::string line);
 	int parseConfig();
@@ -45,7 +46,7 @@ public:
 	// Request& operator=(const Request& obj);
 	~Request();
 	
-	Request(Config *conf);
+	Request(ServerConfig conf);
 
 // Functions
 	void parseRequest(std::string buffer);

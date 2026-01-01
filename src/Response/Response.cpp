@@ -14,7 +14,7 @@
 
 Response::Response()
 {
-	this->_root = "assets/html";  // Config File
+	this->_root = "assets/html/";  // Config File
 	this->FillStatus();
 	_handler["GET"] = &Response::handleGET;
 	_handler["POST"] = &Response::handlePOST;
@@ -193,6 +193,11 @@ void Response::sendFavicon(Request obj, int eventFD)
 
 void Response::handleGET(Request& obj, int eventFD)
 {
+	if (obj.getCode() != 200)
+	{
+		handleERROR(obj, obj.getCode(), eventFD);
+		return ;
+	}
 	if (obj.getPathTarget() == "/icon/favicon.ico")
 	{
 		sendFavicon(obj, eventFD);
@@ -226,31 +231,101 @@ void Response::handleDELETE(Request& obj, int eventFD)
 	(void)obj;
 }
 
+std::string Response::defaultErrorPage(int error)
+{
+    std::stringstream ss;
+
+    ss << "<!DOCTYPE html>\n";
+    ss << "<html>\n";
+    ss << "<head>\n";
+    ss << "<meta charset=\"UTF-8\">\n";
+    ss << "<title>" << error << " " << _status[error] << "</title>\n";
+    ss << "<style>\n";
+    ss << "body { font-family: Arial; background-color: #f4f4f4; text-align: center; padding-top: 10%; }\n";
+    ss << "h1 { font-size: 48px; }\n";
+    ss << "p { font-size: 18px; }\n";
+    ss << "</style>\n";
+    ss << "</head>\n";
+    ss << "<body>\n";
+    ss << "<h1>" << error << " " << _status[error] << "</h1>\n";
+    ss << "<p>The server encountered an error while processing your request.</p>\n";
+    ss << "</body>\n";
+    ss << "</html>\n";
+
+    return ss.str();
+}
+
+
 void Response::handleERROR(Request& obj, int error, int eventFD)
 {
-	std::stringstream ss1;
-	ss1 << error;
-	std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
-	std::string path = getRoot();
-	path.append(obj.getErrorPage(error));
-	std::ifstream file(path.c_str(), std::ios::in);
-	std::string body;
-	if (!file.is_open())
-	{
-		std::cout << "LOG:: " << RED << "Couldn't open error file; (Response::handleERROR)\n" << RESET;
-		body = "";
-	}
-	char buffer[4096];
-	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
-		body.append(buffer, file.gcount());
-	std::stringstream ss2;
-	ss2 << body.size();
-	std::string response = header + 
-							"Content-Type: text/html; charset=UTF-8\r\n"
-							"Content-Length: " + ss2.str() + "\r\n\r\n" +
-							body;
-	send(eventFD, response.c_str(), response.size(), 0);
+    std::stringstream ss1;
+    ss1 << error;
+
+    std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
+
+    std::string body;
+    std::string path = getRoot();
+    path.append(obj.getErrorPage(error)); // Possible Dynamic change
+
+    std::ifstream file(path.c_str(), std::ios::in);
+
+    if (file.is_open())
+    {
+        char buffer[4096];
+        while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
+            body.append(buffer, file.gcount());
+        file.close();
+    }
+    else
+    {
+        std::cout << "LOG:: " << RED
+                  << "Couldn't open error file, generating default error page (Response::handleERROR)\n"
+                  << RESET;
+        body = defaultErrorPage(error);
+    }
+
+    std::stringstream ss2;
+    ss2 << body.size();
+
+    std::string response;
+    response.reserve(header.size() + body.size() + 128);
+
+    response = header +
+               "Content-Type: text/html; charset=UTF-8\r\n"
+               "Content-Length: " + ss2.str() + "\r\n"
+               "Connection: close\r\n"
+               "\r\n" +
+               body;
+
+    send(eventFD, response.c_str(), response.size(), 0);
 }
+
+
+// void Response::handleERROR(Request& obj, int error, int eventFD)
+// {
+// 	std::stringstream ss1;
+// 	ss1 << error;
+// 	std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
+// 	std::string path = getRoot();
+// 	path.append(obj.getErrorPage(error));
+// 	std::ifstream file(path.c_str(), std::ios::in);
+// 	std::string body;
+// 	if (!file.is_open())
+// 	{
+// 		std::cout << "LOG:: " << RED << "Couldn't open error file; (Response::handleERROR)\n" << RESET;
+// 		body = "";
+// 	}
+// 	char buffer[4096];
+// 	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
+// 		body.append(buffer, file.gcount());
+// 	std::stringstream ss2;
+// 	ss2 << body.size();
+// 	std::string response = header + 
+// 							"Content-Type: text/html; charset=UTF-8\r\n"
+// 							"Content-Length: " + ss2.str() + "\r\n\r\n" +
+// 							body;
+// 	send(eventFD, response.c_str(), response.size(), 0);
+// }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
