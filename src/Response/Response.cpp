@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/01 15:23:11 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/01 16:25:25 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -350,7 +350,7 @@ bool Response::isAutoIndexEnabled(Request &obj)
 {
 	// identifying the request path
 	std::string path = obj.getPathTarget();
-
+	
 	// normalize the path (remove slash for comparing)
 	std::string normalizedPath = path;
 	if (normalizedPath.length() > 1 && normalizedPath[normalizedPath.length() - 1] == '/')
@@ -408,7 +408,7 @@ bool Response::isAutoIndexEnabled(Request &obj)
 	// if we found a matching location, we return its auto_index falue (1 or 0)
 	if (bestMatch)
 		return (bestMatch->auto_index); // returns 1 if auto_index is 'on'
-	
+
 	// as a default
 	return (false);
 }
@@ -463,7 +463,7 @@ std::string Response::generateDirectoryHTML(const std::string &dirPath, const st
 	{
 		std::string name = entry->d_name;
 
-		if (name == ".")	// skip current directory 
+		if (name == "." || name == "..") 	// skip current and above directories 
 			continue;
 
 		// Build full path for stat
