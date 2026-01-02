@@ -122,7 +122,7 @@ void	Server::Start(Config *conf)
 			{
 				try
 				{
-					this->_clients[fd].readRequest(epfd, events[i].data.fd);
+					this->_clients[fd].readRequest(epfd, events[i].data.fd, conf->getServerConfig(0));
 					this->_clients[fd].sendResponse(epfd, events[i].data.fd);
 				}
 				catch(const std::exception& e)

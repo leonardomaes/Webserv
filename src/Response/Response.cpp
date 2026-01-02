@@ -130,11 +130,11 @@ void Response::FillStatus()
 	_status[511] = "Network Authentication Required";
 }
 
-std::string Response::getContent(Request obj)	// Add dynamic error based in http code (TO DO)
+std::string Response::getContent(std::string filename)	// Add dynamic error based in http code (TO DO)
 {
 	std::string result;
 	std::string path = this->getRoot();
-	path.append(obj.getPathTarget());
+	path.append(filename);
 	printMsg(path + " (path)");
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
@@ -151,11 +151,11 @@ std::string Response::getContent(Request obj)	// Add dynamic error based in http
 	return result;
 }
 
-std::string Response::getStatus(Request obj)
+std::string Response::getStatus(const Request& obj)
 {
 	std::string status;
 	std::stringstream ss;
-	if (obj.getCode() != 200)
+	if (obj.getCode() >= 400)
 	{
 		//std::cout << "-DBG::" << obj.getProtocol() << "(Protocol - 2)" << std::endl;	// DELETE
 		ss << obj.getCode();
@@ -165,7 +165,7 @@ std::string Response::getStatus(Request obj)
 	return "HTTP/1.1 200 OK\r\n";
 }
 
-void Response::sendFavicon(Request obj, int eventFD)
+void Response::sendFavicon(const Request& obj, int eventFD)
 {
 	std::vector<char> data;
 	std::string path = _root + obj.getPathTarget();
@@ -183,17 +183,29 @@ void Response::sendFavicon(Request obj, int eventFD)
 						"Content-Type: image/x-icon\r\n"
 						"Content-Length: " + ss.str() + "\r\n"
 						"Connection: close\r\n\r\n";
-    send(eventFD, header.c_str(), header.size(), 0);
-    send(eventFD, &data[0], data.size(), 0);
+	send(eventFD, header.c_str(), header.size(), 0);
+	send(eventFD, &data[0], data.size(), 0);
+}
+
+void Response::respond(std::string header, std::string body, int eventFD)
+{
+	std::stringstream ss;
+	ss << body.size();
+	std::string response =	header +
+							"Content-Type: text/html; charset=UTF-8\r\n"
+							"Content-Length: " + ss.str() + "\r\n\r\n" +
+							body;
+	printMsg("\n");
+	send(eventFD, response.c_str(), response.size(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////// MEMBER FUNCTIONS ////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void Response::handleGET(Request& obj, int eventFD)
+void Response::handleGET(const Request& obj, int eventFD)
 {
-	if (obj.getCode() != 200)
+	if (obj.getCode() >= 400)
 	{
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
@@ -205,26 +217,42 @@ void Response::handleGET(Request& obj, int eventFD)
 	}
 	
 	std::string header = this->getStatus(obj);
-	std::string body = this->getContent(obj);
+	std::string body = this->getContent(obj.getPathTarget());
 	printMsg(header + " (header)");
-	std::stringstream ss;
-	ss << body.size();
-	std::string response =	header +					// Make it dynamic (TO DO)
-							"Content-Type: text/html; charset=UTF-8\r\n"
-							"Content-Length: " + ss.str() + "\r\n\r\n" +
-							body;
-	printMsg("\n");
-	send(eventFD, response.c_str(), response.size(), 0);
+	respond(header, body, eventFD);
 }
 
-void Response::handlePOST(Request& obj, int eventFD)
+void Response::handlePOST(const Request& obj, int eventFD)
 {
-	// Upload / CGI
-	(void)eventFD;
-	(void)obj;
+	if (obj.getCode() >= 400)
+	{
+		handleERROR(obj, obj.getCode(), eventFD);
+		return ;
+	}
+	std::map<std::string, std::string> _bodyContent = obj.parseUrlEncodedBody();
+	std::string filename = _root + obj.getPathTarget() + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
+	printMsg("Filename(Response):" + filename);
+	if (filename.find("..") != std::string::npos)
+	{
+		handleERROR(obj, 400, eventFD);
+		return ;
+	}
+	std::string content = _bodyContent["content"];
+	std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
+	if (!file.is_open())
+	{
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+	file << content;
+	file.close();
+
+	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
+	std::string body = this->getContent("post_success.html");
+	respond(header, body, eventFD);
 }
 
-void Response::handleDELETE(Request& obj, int eventFD)
+void Response::handleDELETE(const Request& obj, int eventFD)
 {
 	// Delete resource
 	(void)eventFD;
@@ -233,71 +261,71 @@ void Response::handleDELETE(Request& obj, int eventFD)
 
 std::string Response::defaultErrorPage(int error)
 {
-    std::stringstream ss;
+	std::stringstream ss;
 
-    ss << "<!DOCTYPE html>\n";
-    ss << "<html>\n";
-    ss << "<head>\n";
-    ss << "<meta charset=\"UTF-8\">\n";
-    ss << "<title>" << error << " " << _status[error] << "</title>\n";
-    ss << "<style>\n";
-    ss << "body { font-family: Arial; background-color: #f4f4f4; text-align: center; padding-top: 10%; }\n";
-    ss << "h1 { font-size: 48px; }\n";
-    ss << "p { font-size: 18px; }\n";
-    ss << "</style>\n";
-    ss << "</head>\n";
-    ss << "<body>\n";
-    ss << "<h1>" << error << " " << _status[error] << "</h1>\n";
-    ss << "<p>The server encountered an error while processing your request.</p>\n";
-    ss << "</body>\n";
-    ss << "</html>\n";
+	ss << "<!DOCTYPE html>\n";
+	ss << "<html>\n";
+	ss << "<head>\n";
+	ss << "<meta charset=\"UTF-8\">\n";
+	ss << "<title>" << error << " " << _status[error] << "</title>\n";
+	ss << "<style>\n";
+	ss << "body { font-family: Arial; background-color: #f4f4f4; text-align: center; padding-top: 10%; }\n";
+	ss << "h1 { font-size: 48px; }\n";
+	ss << "p { font-size: 18px; }\n";
+	ss << "</style>\n";
+	ss << "</head>\n";
+	ss << "<body>\n";
+	ss << "<h1>" << error << " " << _status[error] << "</h1>\n";
+	ss << "<p>The server encountered an error while processing your request.</p>\n";
+	ss << "</body>\n";
+	ss << "</html>\n";
 
-    return ss.str();
+	return ss.str();
 }
 
 
-void Response::handleERROR(Request& obj, int error, int eventFD)
+void Response::handleERROR(const Request& obj, int error, int eventFD)
 {
-    std::stringstream ss1;
-    ss1 << error;
+	std::stringstream ss1;
+	ss1 << error;
 
-    std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
+	std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
 
-    std::string body;
-    std::string path = getRoot();
-    path.append(obj.getErrorPage(error)); // Possible Dynamic change
+	std::string body;
+	std::string path = getRoot();
+	path.append(obj.getErrorPage(error)); // Possible Dynamic change
 
-    std::ifstream file(path.c_str(), std::ios::in);
+	std::ifstream file(path.c_str(), std::ios::in);
 
-    if (file.is_open())
-    {
-        char buffer[4096];
-        while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
-            body.append(buffer, file.gcount());
-        file.close();
-    }
-    else
-    {
-        std::cout << "LOG:: " << RED
-                  << "Couldn't open error file, generating default error page (Response::handleERROR)\n"
-                  << RESET;
-        body = defaultErrorPage(error);
-    }
+	if (file.is_open())
+	{
+		char buffer[4096];
+		while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
+			body.append(buffer, file.gcount());
+		file.close();
+	}
+	else
+	{
+		std::cout << "LOG:: " << RED
+				  << "Couldn't open error file, generating default error page (Response::handleERROR)\n"
+				  << RESET;
+		body = defaultErrorPage(error);
+	}
 
-    std::stringstream ss2;
-    ss2 << body.size();
+	std::stringstream ss2;
+	ss2 << body.size();
 
-    std::string response;
-    response.reserve(header.size() + body.size() + 128);
+	std::string response;
+	response.reserve(header.size() + body.size() + 128);
 
-    response = header +
-               "Content-Type: text/html; charset=UTF-8\r\n"
-               "Content-Length: " + ss2.str() + "\r\n"
-               "Connection: close\r\n"
-               "\r\n" +
-               body;
+	response = header +
+			   "Content-Type: text/html; charset=UTF-8\r\n"
+			   "Content-Length: " + ss2.str() + "\r\n"
+			   "Connection: close\r\n"
+			   "\r\n" +
+			   body;
 
-    send(eventFD, response.c_str(), response.size(), 0);
+	send(eventFD, response.c_str(), response.size(), 0);
 }
 
 
@@ -332,8 +360,9 @@ void Response::handleERROR(Request& obj, int error, int eventFD)
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Response starts here
-void Response::generateResponse(Request obj, int epfd, int eventFD)		// TO DO
+void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 {
+	printMsg("Body(test):" + obj.getBody() + "<");
 	std::stringstream dbg_ss;
 	printMsg(obj.getPathTarget() + " (target)");
 	dbg_ss << obj.getCode() << " (code)";

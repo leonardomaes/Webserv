@@ -20,10 +20,11 @@ class Request
 {
 private:
 	// Request info
-	std::string _method;		// !!
-	std::string _pathTarget;	// !!
+	std::string _method;
+	std::string _pathTarget;
 	std::string _protocol;
-	std::map<std::string, std::string> _head;
+	std::map<std::string, std::string> _header;
+	std::string _body;
 
 	// Variables
 	bool		_firstLine;
@@ -40,6 +41,9 @@ private:
 	int fileOpen(std::string filename);
 	void parseHeader(std::string line);
 	int parseConfig();
+	size_t getContentLength() const;
+	void parseBody(std::string &buffer, size_t header_end);
+	std::string decodeUrl(const std::string &str) const;
 public:
 	Request();
 	Request(const Request& obj);
@@ -50,14 +54,17 @@ public:
 
 // Functions
 	void parseRequest(std::string buffer);
+	std::map<std::string, std::string> parseUrlEncodedBody() const;
 
 // Getters
-	std::string getMethod();
-	std::string getPathTarget();
-	std::string getProtocol();
-	std::string getConnection();
-	int			getCode();
-	const std::string getErrorPage(int error);
+	std::string getMethod() const;
+	std::string getPathTarget() const;
+	std::string getProtocol() const;
+	std::string getConnection() const;
+	std::string getBody() const;
+	int			getCode() const;
+	const std::string getErrorPage(int error) const;
+	
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };
 };

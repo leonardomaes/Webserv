@@ -78,8 +78,9 @@ void Client::closeConnection(int epfd)
 
 
 
-void Client::readRequest(int epfd, int eventFD)
+void Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 {
+	this->_request = Request(conf);
 	char buffer[1024];
 	// Received HTTP
 	ssize_t bytes = recv(eventFD, buffer, sizeof(buffer) - 1, 0);
@@ -106,6 +107,7 @@ void Client::sendResponse(int epfd, int eventFD)
 {
 
 	this->_response = Response();
+	printMsg("Body(test):" + this->_request.getBody() + "<");
 	this->_response.generateResponse(this->_request, epfd, eventFD);
 }
 

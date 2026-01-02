@@ -2,34 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>POST Method</title>
+    <title>POST - Create File</title>
 </head>
-<body bgcolor="#ecfeff">
 
-<table width="100%" bgcolor="#0f766e" cellpadding="25">
-    <tr>
-        <td align="center">
-            <font color="white" size="7"><b>POST Method</b></font>
-        </td>
-    </tr>
-</table>
+<body bgcolor="#eef2f7">
 
-<br>
+    <!-- HEADER -->
+    <table width="100%" bgcolor="#1e40af" cellpadding="25">
+        <tr>
+            <td align="center">
+                <font color="white" size="7">
+                    <b>POST - Create File</b>
+                </font>
+            </td>
+        </tr>
+    </table>
 
-<table width="60%" align="center" cellpadding="20" bgcolor="#ffffff">
-    <tr>
-        <td align="center">
-            <form method="POST" action="/upload">
-                <p>
-                    <label>Message:</label><br>
-                    <input type="text" name="message">
-                </p>
+    <br>
 
-                <input type="submit" value="Send POST Request">
-            </form>
-        </td>
-    </tr>
-</table>
+    <!-- FORM -->
+    <table width="70%" align="center" cellpadding="25" bgcolor="#ffffff">
+        <tr>
+            <td>
+
+                <form method="POST" action="/upload">
+                    
+                    <p>
+                        <font size="4"><b>File name</b></font><br>
+                        <input type="text" name="filename" size="40">
+                    </p>
+
+                    <p>
+                        <font size="4"><b>File content</b></font><br>
+                        <textarea name="content" rows="10" cols="60"></textarea>
+                    </p>
+
+                    <p align="center">
+                        <input type="submit" value="Send POST Request">
+                    </p>
+
+                </form>
+
+            </td>
+        </tr>
+    </table>
+
+    <br>
+
+    <!-- INFO -->
+    <table width="70%" align="center" cellpadding="15">
+        <tr>
+            <td align="center">
+                <font size="3" color="#374151">
+                    This form sends a POST request with a file name and its content.<br>
+                    The server is responsible for creating and saving the file.
+                </font>
+            </td>
+        </tr>
+    </table>
 
 </body>
 </html>

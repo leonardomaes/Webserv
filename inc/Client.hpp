@@ -37,7 +37,7 @@ public:
 	int getClientFD();
 
 // Functions
-	void readRequest(int epfd, int eventFD);
+	void readRequest(int epfd, int eventFD, ServerConfig conf);
 	void sendResponse(int epfd,  int eventFD);
 	void closeConnection(int epfd);
 

@@ -20,14 +20,15 @@ class Response
 {
 private:
 	// Member Functions
-	typedef void (Response::*MethodHandler)(Request&, int);
+	typedef void (Response::*MethodHandler)(const Request&, int);
 // Member Functions
-	void handleGET(Request &obj, int eventFD);
-	void handlePOST(Request &obj, int eventFD);
-	void handleDELETE(Request &obj, int eventFD);
+	void handleGET(const Request& obj, int eventFD);
+	void handlePOST(const Request& obj, int eventFD);
+	void handleDELETE(const Request& obj, int eventFD);
 	std::string defaultErrorPage(int error);
-	void handleERROR(Request& obj, int error, int eventFD);
-	void sendFavicon(Request obj, int eventFD);
+	void handleERROR(const Request& obj, int error, int eventFD);
+	void sendFavicon(const Request& obj, int eventFD);
+	void respond(std::string header, std::string body, int eventFD);
 
 	std::map<int, std::string> _status;
 	std::string _root;
@@ -37,15 +38,15 @@ private:
 	void FillStatus();
 
 	// Functions
-	std::string getContent(Request obj);
-	std::string getStatus(Request obj);
+	std::string getContent(std::string filename);
+	std::string getStatus(const Request& obj);
 public:
 	Response();
 	Response(const Response& obj);
 	// Response& operator=(const Response& obj);
 	~Response();
 // Functions
-	void generateResponse(Request obj, int epfd, int eventFD);
+	void generateResponse(const Request& obj, int epfd, int eventFD);
 
 
 // Getters
