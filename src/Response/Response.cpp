@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:24:28 by lmaes            ###   ########.fr       */
+/*   Updated: 2026/01/03 00:06:10 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,8 +133,7 @@ void Response::FillStatus()
 std::string Response::getContent(std::string filename)	// Add dynamic error based in http code (TO DO)
 {
 	std::string result;
-	std::string path = this->getRoot();
-	path.append(filename);
+	std::string path = this->getRoot() + filename;
 	printMsg(path + " (path)");
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
@@ -214,6 +213,49 @@ void Response::handleGET(const Request& obj, int eventFD)
 	{
 		sendFavicon(obj, eventFD);
 		return ;
+	}
+
+	// DIRECTORY LISTING
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+
+	// check if the path is a directory
+	struct stat pathStat;
+	if (stat(fullPath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode))
+	{
+		// is a directory
+		printMsg("Path is a directory: " + fullPath);
+
+		// try to serve index file
+		std::string indexPath = fullPath;
+		if (!indexPath.empty() && indexPath[indexPath.length() - 1] != '/')
+			indexPath += "/";
+		indexPath += "index.html";
+		
+		struct stat indexStat;
+		if (stat(indexPath.c_str(), &indexStat) == 0 && S_ISREG(indexStat.st_mode))
+		{
+			// index file exists -> update the path and send it
+			printMsg("serving index file: " + indexPath);
+			fullPath = indexPath;
+		}
+		else
+		{
+			// if no index file, check if autoindex is enabled
+			if (isAutoIndexEnabled(obj))
+			{
+				printMsg("Autoindex enabled, generating directory listing");
+				handleDirectoryListing(obj, eventFD);
+				return;
+			}
+			else
+			{
+				// if autoindex is disabled and no index file, send 403 error
+				printMsg("Autoindex disabled and no index file - 403 Forbiden");
+				handleERROR(obj, 403, eventFD);
+				return;
+			}
+		}			
+
 	}
 	
 	std::string header = this->getStatus(obj);
@@ -403,6 +445,221 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	else
 		std::cout << "LOG:: " << GREEN << "> Sended Response (" << obj.getCode() << " - "
 					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// DIR LISTING //////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+bool Response::isAutoIndexEnabled(const Request &obj)
+{
+	// identifying the request path
+	std::string path = obj.getPathTarget();
+
+	// getting the specific server config 
+	const ServerConfig *server = obj.getConfig();
+	if (!server)
+		return (false);
+	
+	// normalize the path (remove slash for comparing)
+	std::string normalizedPath = path;
+	if (normalizedPath.length() > 1 && normalizedPath[normalizedPath.length() - 1] == '/')
+		normalizedPath = normalizedPath.substr(0, normalizedPath.length() - 1);
+
+	// finding the correct location on the server
+	const LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+	
+	for (size_t i = 0; i < server->locations.size(); ++i)
+	{
+		const LocationConfig &loc = server->locations[i];
+
+		// normalize location path
+		std::string locPath = loc.path;
+		if (locPath.length() > 1 && locPath[locPath.length() - 1] == '/')
+			locPath = locPath.substr(0, locPath.length() - 1);
+
+		// check if request path starts with location path
+		// checking first the exact match and then the prefix match followed by '/'
+		if (normalizedPath == locPath)
+		{
+			// exact match
+			if (locPath.length() > longestMatch)
+			{
+				longestMatch = locPath.length();
+				bestMatch = &loc;
+			}
+		}
+		else if (normalizedPath.find(locPath) == 0)
+		{
+			// prefix match served after
+			if (normalizedPath.length() > locPath.length() && 
+			    normalizedPath[locPath.length()] == '/')
+			{
+				if (locPath.length() > longestMatch)
+				{
+					longestMatch = locPath.length();
+					bestMatch = &loc;
+				}
+			}
+		}
+	}
+
+	// if we found a matching location, we return its auto_index falue (1 or 0)
+	if (bestMatch)
+		return (bestMatch->auto_index); // returns 1 if auto_index is 'on'
+
+	// as a default
+	return (false);
+}
+
+void Response::handleDirectoryListing(const Request &obj, int eventFD)
+{
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+	std::string uriPath = obj.getPathTarget();
+	
+	printMsg("Generatinng directory listing for: " + fullPath);
+
+	// generate the HTML body (helper function)
+	std::string body = generateDirectoryHTML(fullPath, uriPath);
+	if (body.empty())	//safeguard for failing to read directory
+	{
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+
+	// building the HTTP response (header + body)
+	std::stringstream ss;
+	ss << body.size();
+
+	std::string header = "HTTP/1.1 200 OK\r\n"
+						 "Content-Type: text/html; charset=UTF-8\r\n"
+						 "Content-Length: " + ss.str() + "\r\n"
+						 "Connection: close\r\n\r\n";
+	
+	std::string response = header + body;
+
+	// sending the response
+	send(eventFD, response.c_str(), response.size(), 0);
+
+	printMsg("Directory list sent successfully");
+}
+
+std::string Response::generateDirectoryHTML(const std::string &dirPath, const std::string &uriPath)
+{
+	DIR* dir = opendir(dirPath.c_str());
+	if (!dir)
+	{
+		std::cerr << "LOG:: " << RED << "Failed to open directory: " << dirPath << RESET << std::endl;
+		return "";
+	}
+
+	// stores directory entries
+	std::vector<std::string> directories;
+	std::vector<std::string> files;
+
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+
+		if (name == "." || name == "..") 	// skip current and above directories 
+			continue;
+
+		// Build full path for stat
+		std::string fullEntryPath = dirPath;
+		if (!dirPath.empty() && dirPath[dirPath.length() - 1] != '/')
+			fullEntryPath += "/";
+		fullEntryPath += name;
+
+		struct stat entryStat;
+		if (stat(fullEntryPath.c_str(), &entryStat) == 0)
+		{
+			if (S_ISDIR(entryStat.st_mode))
+				directories.push_back(name);
+			else
+				files.push_back(name);
+		}
+	}
+	closedir(dir);
+
+	// sort entries alphabetically
+	std::sort(directories.begin(), directories.end());
+	std::sort(files.begin(), files.end());
+
+	// ensure that uriPath ends with '/'
+	std::string basePath = uriPath;
+	if (!basePath.empty() && basePath[basePath.length() - 1] != '/')
+		basePath += "/";
+
+	// build HTML
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n"
+         << "<html>\n"
+         << "<head>\n"
+         << "    <meta charset=\"UTF-8\">\n"
+         << "    <title>Index of " << uriPath << "</title>\n"
+         << "    <style>\n"
+         << "        body { font-family: Arial, sans-serif; margin: 40px; }\n"
+         << "        h1 { color: #333; border-bottom: 2px solid #666; padding-bottom: 10px; }\n"
+         << "        table { width: 100%; border-collapse: collapse; margin-top: 20px; }\n"
+         << "        th { background-color: #f0f0f0; text-align: left; padding: 10px; border-bottom: 2px solid #666; }\n"
+         << "        td { padding: 8px; border-bottom: 1px solid #ddd; }\n"
+         << "        tr:hover { background-color: #f5f5f5; }\n"
+         << "        a { color: #0066cc; text-decoration: none; }\n"
+         << "        a:hover { text-decoration: underline; }\n"
+         << "        .dir { font-weight: bold; }\n"
+         << "        .icon { margin-right: 5px; }\n"
+         << "    </style>\n"
+         << "</head>\n"
+         << "<body>\n"
+         << "    <h1>Index of " << uriPath << "</h1>\n"
+         << "    <table>\n"
+         << "        <tr><th>Name</th><th>Type</th></tr>\n";
+
+	// adding a parent directory link (if not root)
+	if (uriPath != "/")
+	{
+		std::string parentPath = uriPath;
+		size_t lastSlash = parentPath.find_last_of('/');
+		if (lastSlash != std::string::npos && lastSlash > 0)
+			parentPath = parentPath.substr(0, lastSlash);
+		else
+			parentPath = "/";
+
+		html << "        <tr>\n"
+             << "            <td><a href=\"" << parentPath << "\">📁 ../</a></td>\n"
+             << "            <td>Directory</td>\n"
+             << "        </tr>\n";
+	}
+
+	// add directories
+	for (size_t i = 0; i < directories.size(); ++i)
+	{
+		html << "        <tr>\n"
+             << "            <td class=\"dir\"><a href=\"" << basePath << directories[i] << "/\">📁 " 
+             << directories[i] << "/</a></td>\n"
+             << "            <td>Directory</td>\n"
+             << "        </tr>\n";
+	}
+
+	// add files
+	for (size_t i = 0; i < files.size(); ++i)
+    {
+        html << "        <tr>\n"
+             << "            <td><a href=\"" << basePath << files[i] << "\">📄 " 
+             << files[i] << "</a></td>\n"
+             << "            <td>File</td>\n"
+             << "        </tr>\n";
+    }
+
+	html << "    </table>\n"
+		<< "    <hr>\n"
+		<< "    <p><em>Webserv/1.0 Server</em></p>\n"
+		<< "</body>\n"
+		<< "</html>\n";
+
+	return (html.str());	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

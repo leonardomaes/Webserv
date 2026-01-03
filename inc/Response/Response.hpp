@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:09 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:24:10 by lmaes            ###   ########.fr       */
+/*   Updated: 2026/01/02 23:50:11 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,11 @@
 #include "../Webserv.hpp"
 #include "../Request.hpp"
 #include "../Utils.hpp"
+
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sstream>
+#include <algorithm>
 
 class Response
 {
@@ -33,6 +38,11 @@ private:
 	std::map<int, std::string> _status;
 	std::string _root;
 	std::map<std::string, MethodHandler> _handler;
+
+	// AutoIndex feature
+	bool isAutoIndexEnabled(const Request &obj);
+	void handleDirectoryListing(const Request &obj, int eventFD);
+	std::string generateDirectoryHTML(const std::string &dirPath, const std::string &uriPath);
 
 	// Fill
 	void FillStatus();

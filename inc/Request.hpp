@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:25:57 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:25:58 by lmaes            ###   ########.fr       */
+/*   Updated: 2026/01/03 00:05:35 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,11 @@ public:
 	std::string getBody() const;
 	int			getCode() const;
 	const std::string getErrorPage(int error) const;
-	
+	const ServerConfig *getConfig() const;	// RN: need to add this getter here to access the config info
+
+// Setters
+	void setPathTarget(const std::string &path);
+
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };
 };

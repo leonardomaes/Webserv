@@ -49,6 +49,24 @@ static bool isOnlyWhiteSpaces(const std::string &s)
     return (true);
 }
 
+// trim whitespaces on the beggining and end of a string 
+static std::string trim(const std::string &s)
+{
+    size_t start = 0;
+    size_t end = s.length();
+    
+    // first non-whitespace
+    while (start < end && std::isspace(static_cast<unsigned char>(s[start])))
+        ++start;
+    
+    // last non-whitespace
+    while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1])))
+        --end;
+    
+    return s.substr(start, end - start);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// CANONICAL + CONSTRUCTOR ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -422,7 +440,7 @@ void Config::parseServerBody(std::map<std::string, std::string> &serverParams, s
 LocationConfig Config::parseLocationBlock(const std::string &firstLocationPath)
 {
     LocationConfig loc;
-    loc.path = firstLocationPath;
+    loc.path = trim(firstLocationPath);
 
     // creating a temporary map for this location raw info (root, allow_methods, etc...)
     std::map<std::string, std::string> locParams;
@@ -526,28 +544,28 @@ ServerConfig Config::buildServerConfig(const std::map<std::string, std::string> 
     }
 
     // mandatory fields
-    conf.listen = serverParams.find("listen")->second;
-    conf.root   = serverParams.find("root")->second;
+    conf.listen = trim(serverParams.find("listen")->second);
+    conf.root   = trim(serverParams.find("root")->second);
 
     it = serverParams.find("host");
-    conf.host = (it != serverParams.end()) ? it->second : "0.0.0.0"; // key value or default
+    conf.host = (it != serverParams.end()) ? trim(it->second) : "0.0.0.0"; // key value or default
 
     it = serverParams.find("index");
-    conf.index = (it != serverParams.end()) ? it->second : "index.html"; // key value or default
+    conf.index = (it != serverParams.end()) ? trim(it->second) : "index.html"; // key value or default
 
     it = serverParams.find("server_name");
     if (it != serverParams.end())
-        conf.server_name = it->second;
+        conf.server_name = trim(it->second);
       
     it = serverParams.find("error_page");
     if (it != serverParams.end())
-        conf.error_page = it->second;
+        conf.error_page = trim(it->second);
 
     it = serverParams.find("client_max_body_size");
     if (it != serverParams.end())
     {
         // very simple parsing that can be updated later (if needed). Now it accepts only numbers in bytes. 
-        std::istringstream iss(it->second);
+        std::istringstream iss(trim(it->second));
         std::size_t sz = 0;
         if (!(iss >> sz) || !iss.eof())
             throw ParseException("invalid client_max_body_size value \"" + it->second + "\"");
