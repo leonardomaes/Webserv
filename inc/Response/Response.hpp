@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:09 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/02 23:10:40 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/02 23:50:11 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,8 @@ private:
 	std::map<std::string, MethodHandler> _handler;
 
 	// AutoIndex feature
-	bool isAutoIndexEnabled(Request &obj);
-	void handleDirectoryListing(Request &obj, int eventFD);
+	bool isAutoIndexEnabled(const Request &obj);
+	void handleDirectoryListing(const Request &obj, int eventFD);
 	std::string generateDirectoryHTML(const std::string &dirPath, const std::string &uriPath);
 
 	// Fill

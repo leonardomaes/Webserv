@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/01 15:03:54 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/03 00:05:02 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -364,9 +364,9 @@ std::string Request::getBody() const
 	return _body;
 }
 
-Config *Request::getConfig()
+const ServerConfig *Request::getConfig() const
 {
-	return _conf;
+	return &_conf;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

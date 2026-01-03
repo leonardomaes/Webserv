@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/02 23:12:31 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/03 00:06:10 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,8 +133,7 @@ void Response::FillStatus()
 std::string Response::getContent(std::string filename)	// Add dynamic error based in http code (TO DO)
 {
 	std::string result;
-	std::string path = this->getRoot();
-	path.append(filename);
+	std::string path = this->getRoot() + filename;
 	printMsg(path + " (path)");
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
@@ -237,11 +236,7 @@ void Response::handleGET(const Request& obj, int eventFD)
 		{
 			// index file exists -> update the path and send it
 			printMsg("serving index file: " + indexPath);
-			std::string newPath = obj.getPathTarget();
-			if (newPath[newPath.length() - 1] != '/')
-				newPath += "/";
-			newPath += "index.html"; 
-			obj.setPathTarget(newPath);
+			fullPath = indexPath;
 		}
 		else
 		{
@@ -450,33 +445,28 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 /////////////////////////////////////// DIR LISTING //////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-bool Response::isAutoIndexEnabled(Request &obj)
+bool Response::isAutoIndexEnabled(const Request &obj)
 {
 	// identifying the request path
 	std::string path = obj.getPathTarget();
+
+	// getting the specific server config 
+	const ServerConfig *server = obj.getConfig();
+	if (!server)
+		return (false);
 	
 	// normalize the path (remove slash for comparing)
 	std::string normalizedPath = path;
 	if (normalizedPath.length() > 1 && normalizedPath[normalizedPath.length() - 1] == '/')
 		normalizedPath = normalizedPath.substr(0, normalizedPath.length() - 1);
 
-	// match the request path with the correspondent location in config
-	const std::vector<ServerConfig> &servers = obj.getConfig()->getServers();
-
-	// CHECK THIS LATER WITH LEO: for now implementing the search for location on the first server, but ideally we need to match the search with the correct server (host and port)
-	// matching the request path with the correct location in config
-	if (servers.empty())
-		return (false);
-	
-	const ServerConfig &server = servers[0]; // EVALUATE TO IMPROVE THIS
-
-	// finding the correct location
+	// finding the correct location on the server
 	const LocationConfig* bestMatch = NULL;
 	size_t longestMatch = 0;
 	
-	for (size_t i = 0; i < server.locations.size(); ++i)
+	for (size_t i = 0; i < server->locations.size(); ++i)
 	{
-		const LocationConfig &loc = server.locations[i];
+		const LocationConfig &loc = server->locations[i];
 
 		// normalize location path
 		std::string locPath = loc.path;
@@ -517,7 +507,7 @@ bool Response::isAutoIndexEnabled(Request &obj)
 	return (false);
 }
 
-void Response::handleDirectoryListing(Request &obj, int eventFD)
+void Response::handleDirectoryListing(const Request &obj, int eventFD)
 {
 	std::string fullPath = this->getRoot() + obj.getPathTarget();
 	std::string uriPath = obj.getPathTarget();
