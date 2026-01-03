@@ -116,8 +116,15 @@ void Request::parseHeader(std::string line)
 		_header[key] = value;
 }
 
+// Location
+// Root
+// Redirect
+// auto_index
+// CGI_PATH
+// Allowed Methods
+
 int Request::validLocation(std::string filename)
-{	// Check if the location exist
+{	// Check if the LOCATION exist
 	size_t it_l = 0;
 	size_t best = _conf.locations.size();
 	size_t bestLen = 0;
@@ -134,25 +141,31 @@ int Request::validLocation(std::string filename)
 				bestLen = loc.size();
 			}
 		}
+		printMsg("Filename: " + _conf.locations[i].path);
 	}
-	if (best == _conf.locations.size())
-		return 404;
-
+	printMsg("Filename: " + filename);
 	it_l = best;
-
-	// Check in the location for the allowed methods
 	bool allowed = false;
-	for (size_t i = 0; i < _conf.locations[it_l].allow_methods.size(); i++)
+	if (best == _conf.locations.size()) // Case there is no location
 	{
-		if (_conf.locations[it_l].allow_methods[i] == this->_method)
-		{
+		if (this->_method == "GET" || this->_method == "POST" || this->_method == "DELTETE") // Change it to check SERVER CONFIG for the allowed methods
 			allowed = true;
-			break;
+	}
+	else
+	{
+		// Check in the location for the ALLOWED METHODS
+		for (size_t i = 0; i < _conf.locations[it_l].allow_methods.size(); i++)
+		{
+			if (_conf.locations[it_l].allow_methods[i] == this->_method)
+			{
+				allowed = true;
+				break;
+			}
+			printMsg("Location: " + _conf.locations[it_l].path);
+			printMsg("Location: " + filename);
+			printMsg("Method: " + _conf.locations[it_l].allow_methods[i]);
+			printMsg("Method: " + this->_method);
 		}
-		printMsg("Location: " + _conf.locations[it_l].path);
-		printMsg("Location: " + filename);
-		printMsg("Method: " + _conf.locations[it_l].allow_methods[i]);
-		printMsg("Method: " + this->_method);
 	}
 	if (!allowed)
 		return 405;
@@ -196,7 +209,7 @@ int Request::parseConfig()		// Missing Config file to make
 		code = this->parsePath();
 	if (code < 400)
 	{
-		if (this->_pathTarget == "/")
+		if (this->_pathTarget == "/")  // TO DO (Check right location)
 			_pathTarget = _conf.index;
 		else if (this->_pathTarget == "/favicon.ico")
 			_pathTarget = "/icon/favicon.ico";			// Changes to icon dir
