@@ -125,8 +125,8 @@ int Request::validLocation(std::string filename)
 	{
 		const std::string& loc = _conf.locations[i].path;
 
-		if (filename.compare(0, loc.size(), loc) == 0)
-		{
+		if (loc == "/" || (filename.compare(0, loc.size(), loc) == 0 && (filename.size() == loc.size() || filename[loc.size()] == '/')))
+		{		// may have problems here
 			if (loc.size() > bestLen)
 			{
 				best = i;
@@ -148,6 +148,10 @@ int Request::validLocation(std::string filename)
 			allowed = true;
 			break;
 		}
+		printMsg("Location: " + _conf.locations[it_l].path);
+		printMsg("Location: " + filename);
+		printMsg("Method: " + _conf.locations[it_l].allow_methods[i]);
+		printMsg("Method: " + this->_method);
 	}
 	if (!allowed)
 		return 405;

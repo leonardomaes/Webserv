@@ -232,7 +232,7 @@ void Response::handlePOST(const Request& obj, int eventFD)
 	std::map<std::string, std::string> _bodyContent = obj.parseUrlEncodedBody();
 	std::string filename = _root + obj.getPathTarget() + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
 	printMsg("Filename(Response):" + filename);
-	if (filename.find("..") != std::string::npos)
+	if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find('/') != std::string::npos)
 	{
 		handleERROR(obj, 400, eventFD);
 		return ;
@@ -254,9 +254,15 @@ void Response::handlePOST(const Request& obj, int eventFD)
 
 void Response::handleDELETE(const Request& obj, int eventFD)
 {
-	// Delete resource
-	(void)eventFD;
-	(void)obj;
+	if (obj.getCode() >= 400)
+	{
+		handleERROR(obj, obj.getCode(), eventFD);
+		return ;
+	}
+	
+	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
+	std::string body = this->getContent("delete_success.html");
+	respond(header, body, eventFD);
 }
 
 std::string Response::defaultErrorPage(int error)
