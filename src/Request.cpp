@@ -22,6 +22,7 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
 	_errorPage[405] = "/error/405.html";
+	_root = "";
 }
 
 Request::Request(const Request& obj)
@@ -33,6 +34,7 @@ Request::Request(const Request& obj)
 	_responseCode = obj._responseCode;
 	_errorPage = obj._errorPage;
 	_conf = obj._conf;
+	_root = obj._root;
 }
 
 // Request& Request::operator=(const Request& obj)
@@ -60,6 +62,7 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	_errorPage[405] = "/error/405.html";
 	_conf = conf;
 	_body = "";
+	_root = "";
 }
 
 int Request::fileOpen(std::string target)
@@ -118,6 +121,7 @@ void Request::parseHeader(std::string line)
 
 // Location
 // Root
+// index
 // Redirect
 // auto_index
 // CGI_PATH
@@ -148,8 +152,9 @@ int Request::validLocation(std::string filename)
 	bool allowed = false;
 	if (best == _conf.locations.size()) // Case there is no location
 	{
-		if (this->_method == "GET" || this->_method == "POST" || this->_method == "DELTETE") // Change it to check SERVER CONFIG for the allowed methods
+		if (this->_method == "GET" || this->_method == "POST" || this->_method == "DELETE")
 			allowed = true;
+		_root = _conf.root;
 	}
 	else
 	{
@@ -166,7 +171,14 @@ int Request::validLocation(std::string filename)
 			printMsg("Method: " + _conf.locations[it_l].allow_methods[i]);
 			printMsg("Method: " + this->_method);
 		}
+		printMsg("Location Root>" + _conf.locations[it_l].root + "<");
+		if (_conf.locations[it_l].root != "")
+			_root = _conf.locations[it_l].root;
+		else
+			_root = _conf.root;
 	}
+	if (_pathTarget == "/")
+		_pathTarget = _conf.index;
 	if (!allowed)
 		return 405;
 	if (this->_method == "POST")
@@ -181,6 +193,7 @@ int Request::parsePath()		// TO DO   (Config File)
 	{
 		if (this->_method != "GET")
 			return 405;
+		_pathTarget = "/icon/favicon.ico";
 		return 200;
 	}
 	int code = 200;
@@ -207,13 +220,6 @@ int Request::parseConfig()		// Missing Config file to make
 	// If _pathTarget is invalid (Parsing target path), then invalid page
 	if (code < 400)
 		code = this->parsePath();
-	if (code < 400)
-	{
-		if (this->_pathTarget == "/")  // TO DO (Check right location)
-			_pathTarget = _conf.index;
-		else if (this->_pathTarget == "/favicon.ico")
-			_pathTarget = "/icon/favicon.ico";			// Changes to icon dir
-	}
 	// std::cout << _pathTarget << std::endl;
 	return code;
 }
@@ -358,6 +364,11 @@ std::string Request::getProtocol() const
 int Request::getCode() const
 {
 	return _responseCode;
+}
+
+std::string Request::getRoot() const
+{
+	return _root;
 }
 
 std::string Request::getConnection() const

@@ -23,6 +23,7 @@ private:
 	std::string _method;
 	std::string _pathTarget;
 	std::string _protocol;
+	std::string _root;
 	std::map<std::string, std::string> _header;
 	std::string _body;
 
@@ -60,6 +61,7 @@ public:
 	std::string getMethod() const;
 	std::string getPathTarget() const;
 	std::string getProtocol() const;
+	std::string getRoot() const;
 	std::string getConnection() const;
 	std::string getBody() const;
 	int			getCode() const;

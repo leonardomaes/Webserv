@@ -167,7 +167,7 @@ std::string Response::getStatus(const Request& obj)
 void Response::sendFavicon(const Request& obj, int eventFD)
 {
 	std::vector<char> data;
-	std::string path = _root + obj.getPathTarget();
+	std::string path = getRoot() + obj.getPathTarget();
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
 		throw ("Invalid (Request::sendFavicon)");
@@ -272,7 +272,7 @@ void Response::handlePOST(const Request& obj, int eventFD)
 		return ;
 	}
 	std::map<std::string, std::string> _bodyContent = obj.parseUrlEncodedBody();
-	std::string filename = _root + obj.getPathTarget() + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
+	std::string filename = getRoot() + obj.getPathTarget() + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
 	printMsg("Filename(Response):" + filename);
 	if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find('/') != std::string::npos)
 	{
@@ -410,6 +410,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 // Response starts here
 void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 {
+	this->_root = obj.getRoot();
 	printMsg("Body(test):" + obj.getBody() + "<");
 	std::stringstream dbg_ss;
 	printMsg(obj.getPathTarget() + " (target)");
