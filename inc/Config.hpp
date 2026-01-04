@@ -84,8 +84,10 @@ struct ServerConfig {
 	std::string		server_name;
 	std::string		root;
 	std::string		index;
-	std::string		error_page;
 	std::size_t		client_max_body_size;
+
+	// Error pages
+	std::map<int, std::string> error_pages;
 
 	// All the locations from this server
 	std::vector<LocationConfig> locations;
@@ -101,9 +103,13 @@ struct ServerConfig {
         std::cout << "server_name: " << server_name << "\n";
         std::cout << "root: " << root << "\n";
         std::cout << "index: " << index << "\n";
-        std::cout << "error_page: " << error_page << "\n";
         std::cout << "client_max_body_size: " << client_max_body_size << "\n";
         std::cout << "locations count: " << locations.size() << "\n";
+        
+		std::cout << "error_pages:\n";
+		for (std::map<int, std::string>::const_iterator it = error_pages.begin();
+			 it != error_pages.end(); ++it)
+				std::cout << " " << it->first << " -> " << it->second << "\n";
 
         for (size_t i = 0; i < locations.size(); ++i)
         {
@@ -208,7 +214,6 @@ class Config
 
 		// FOR DEBUGGING ONLY
 		void debugPrintAllServers() const;
-
 
 		ServerConfig getServerConfig(int index);
 };

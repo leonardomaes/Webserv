@@ -428,6 +428,18 @@ void Config::parseServerBody(std::map<std::string, std::string> &serverParams, s
             LocationConfig loc = parseLocationBlock(path);
             locations.push_back(loc);
         }
+        else if (tok.value == "error_page")
+        {
+            // collects all error pages entries lines
+            std::map<std::string, std::string>::iterator it = serverParams.find("error_page");
+            std::map<std::string, std::string> tmp;
+            std::string key = tok.value;
+            consumeKeyword(key, tmp);
+            if (it == serverParams.end())
+                serverParams["error_page"] = tmp["error_page"];
+            else
+                it->second += "\n" + tmp["error_page"];
+        }
         else
         {
             // reusing consumeKeyword to fill serverParams
@@ -557,9 +569,67 @@ ServerConfig Config::buildServerConfig(const std::map<std::string, std::string> 
     if (it != serverParams.end())
         conf.server_name = trim(it->second);
       
+    // error_page special parsing to store the info in a map    
     it = serverParams.find("error_page");
     if (it != serverParams.end())
-        conf.error_page = trim(it->second);
+    {
+        // splitting different lines as we store them all together in serverParams separated by '\n'
+        std::string all = it->second;
+        std::string line;
+        std::string::size_type start = 0;
+
+        while (start <= all.size())
+        {
+            std::string::size_type pos = all.find('\n', start);
+            if (pos == std::string::npos)
+                line = all.substr(start);
+            else
+                line = all.substr(start, pos - start);
+        
+            line = trim(line);
+            if (!line.empty())
+            {
+                // parsing line into tokens sepaarated by spaces (line is like "413 400 /40x.html")
+                std::vector<std::string> parts;
+                std::string current;
+                for (size_t i = 0; i < line.size(); ++i)
+                {
+                    char ch = line[i];
+                    if (ch == ' ')
+                    {
+                        if (!current.empty())
+                        {
+                            parts.push_back(current);
+                            current.clear();
+                        }
+                    }
+                    else
+                        current += ch;
+                }
+                if (!current.empty())
+                    parts.push_back(current);
+
+                if (parts.size() < 2)
+                    throw ParseException("invalid error_page content \"" + line + "\"");
+                
+                // last token is always the path and previous tokens are the codes
+                const std::string path = parts[parts.size() - 1];
+
+                for (size_t i = 0; i + 1 < parts.size(); ++i) // convert all codes int intigers
+                {
+                    std::istringstream iss(parts[i]);
+                    int code = 0;
+                    if (!(iss >> code) || !iss.eof())
+                        throw ParseException ("invalid error code \"" + parts[i] + "\" in error_pages");
+                    conf.error_pages[code] = path;  // it inserts or overrides if already exists
+                }           
+            }
+    
+        if (pos == std::string::npos)
+            break;
+        start = pos + 1; 
+        }
+    }
 
     it = serverParams.find("client_max_body_size");
     if (it != serverParams.end())
