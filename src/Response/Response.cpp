@@ -170,7 +170,7 @@ void Response::sendFavicon(const Request& obj, int eventFD)
 	std::string path = getRoot() + obj.getPathTarget();
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
-		throw ("Invalid (Request::sendFavicon)");
+		throw ResponseException("Invalid (Request::sendFavicon)");
 	file.seekg(0, std::ios::end);
 	std::streamsize size = file.tellg();
 	file.seekg(0, std::ios::beg);
@@ -392,19 +392,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 // 		body = "";
 // 	}
 // 	char buffer[4096];
-// 	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0)
-// 		body.append(buffer, file.gcount());
-// 	std::stringstream ss2;
-// 	ss2 << body.size();
-// 	std::string response = header + 
-// 							"Content-Type: text/html; charset=UTF-8\r\n"
-// 							"Content-Length: " + ss2.str() + "\r\n\r\n" +
-// 							body;
-// 	send(eventFD, response.c_str(), response.size(), 0);
-// }
-
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
+// 	while (file.read(buffer, sizeof(buffer)) ||		auto_index off;ONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // Response starts here
@@ -588,7 +576,7 @@ std::string Response::generateDirectoryHTML(const std::string &dirPath, const st
 	std::sort(directories.begin(), directories.end());
 	std::sort(files.begin(), files.end());
 
-	// ensure that uriPath ends with '/'
+	// ensure that uriPath ends with '/'		auto_index off;
 	std::string basePath = uriPath;
 	if (!basePath.empty() && basePath[basePath.length() - 1] != '/')
 		basePath += "/";

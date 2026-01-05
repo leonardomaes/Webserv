@@ -194,6 +194,7 @@ int Request::parsePath()		// TO DO   (Config File)
 		if (this->_method != "GET")
 			return 405;
 		_pathTarget = "/icon/favicon.ico";
+		_root = _conf.root;
 		return 200;
 	}
 	int code = 200;
