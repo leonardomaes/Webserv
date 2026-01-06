@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/03 00:06:10 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/06 23:43:09 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -296,10 +296,27 @@ void Response::handlePOST(const Request& obj, int eventFD)
 
 void Response::handleDELETE(const Request& obj, int eventFD)
 {
+	// checking for request errors
 	if (obj.getCode() >= 400)
 	{
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
+	}
+
+	// fuild full path (root + target path)
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+	printMsg("Received DELETE request for: " + fullPath);
+
+	// learn more about traversak atacks and hor to avoid them
+
+	// check if resource exists
+	struct stat pathStat;
+	if (stat(fullPath.c_str(), &pathStat) != 0)
+	{
+		// resource not found
+		printMsg("Resource not found: " + fullPath);
+		handleERROR(obj, 404, eventFD);
+		return;
 	}
 	
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
