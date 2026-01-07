@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/06 23:43:09 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/07 19:23:56 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -307,7 +307,7 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	std::string fullPath = this->getRoot() + obj.getPathTarget();
 	printMsg("Received DELETE request for: " + fullPath);
 
-	// learn more about traversak atacks and hor to avoid them
+	// learn more about traverse atacks and how to avoid them
 
 	// check if resource exists
 	struct stat pathStat;
@@ -318,6 +318,43 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 		handleERROR(obj, 404, eventFD);
 		return;
 	}
+
+	// check if it is a directory (folders cannot be deleted)
+	if (S_ISDIR(pathStat.st_mode))
+	{
+		printMsg("Cannot delete a folder: " + fullPath);
+		handleERROR(obj, 403, eventFD);
+		return;		
+	}
+
+	// check file permissions (write)
+	if (access(fullPath.c_str(), R_OK) != 0)
+	{
+		printMsg("Permission denied for: " + fullPath);
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+
+	// delete file, if it fails return error
+	if (unlink(fullPath.c_str() != 0))
+	{
+		printMsg("File delition failed for: " + fullPath);
+		handleERROR(obj, 500, eventFD);
+		return;
+	}
+
+	// print a log message for sucess
+	printMsg("File sucessfull deleted: " + fullPath);
+	
+/*
+Status Codes to Use
+    204 No Content: Standard response for successful DELETE (no response body)
+    200 OK: Alternative with confirmation message body
+    404 Not Found: Resource doesn't exist
+    403 Forbidden: Permission denied or directory deletion attempt
+    405 Method Not Allowed: DELETE not permitted for this route
+    500 Internal Server Error: Filesystem operation failed
+*/
 	
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
 	std::string body = this->getContent("delete_success.html");
