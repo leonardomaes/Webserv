@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "Webserv.hpp"
+#include "Header.hpp"
 #include "Config.hpp"
 #include "Client.hpp"
 #include "Signal.hpp"
@@ -22,7 +22,8 @@ class Server
 {
 private:
 	int _SocketFD;
-	Client _clients[MAX_CONNECTIONS];
+	ServerConfig _conf;
+	// Client _clients[MAX_CONNECTIONS];
 	struct sockaddr_in _SocketAddress;
 public:
 	Server();
@@ -31,14 +32,17 @@ public:
 	~Server();
 
 // Functions
-    Server(int port, u_long interface);
-    void Start(Config *conf);
+	// Server(int port, u_long interface);
+	Server(const ServerConfig& conf);
+	void Start(Config *conf);
+	int acceptClient() const;
 /* Defining Server Address */
 	void SetAddr(int domain, int port, int interface);
 
 
 // Getters
-	int getSocketFD();
+	int getSocketFD() const;
+	const ServerConfig& getConfig() const;
 
 // Exception
 	class ServerException : public std::exception {

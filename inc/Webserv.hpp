@@ -5,74 +5,28 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/27 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:08:51 by lmaes            ###   ########.fr       */
+/*   Created: 2026/01/05 17:08:50 by lmaes             #+#    #+#             */
+/*   Updated: 2026/01/05 17:08:51 by lmaes            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
+#include "Server.hpp"
 
-#include <algorithm>
-#include <cctype>
-#include <cmath>
-#include <ctime>
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
-#include <exception>
-#include <fcntl.h>
-#include <fstream>
-#include <limits>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
-#include <sstream>
-#include <string>
-#include <sys/time.h>
-#include <bits/stdc++.h>
-#include <unistd.h>
+class Server;
+class Client;
 
-// Containers
-#include <deque>
-#include <vector>
-#include <stack>
-#include <list>
-#include <map>
+class Webserv
+{
+private:
+	int							_epfd;
+	std::vector<Server*>		_servers;
+	std::map<int, Client>		_clients;
+	Config*						_config;
+public:
+	Webserv(Config* config);
+	~Webserv();
 
-// Webserv
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/epoll.h>
-
-// Colors
-#define RESET   "\033[0m"
-#define BLACK   "\033[30m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN    "\033[36m"
-#define WHITE   "\033[37m"
-
-// Background colors
-#define BCK_BLACK   "\033[40m"
-#define BCK_RED     "\033[41m"
-#define BCK_GREEN   "\033[42m"
-#define BCK_YELLOW  "\033[43m"
-#define BCK_BLUE    "\033[44m"
-#define BCK_MAGENTA "\033[45m"
-#define BCK_CYAN    "\033[46m"
-#define BCK_WHITE   "\033[47m"
-
-// Macros
-
-#define MAX_EVENTS 64
-#define MAX_CONNECTIONS 16
-#define BUFFER_SIZE 4096
-#define PORT 8080
-#define DBG_MSG 1
-#define DBG_COLOR CYAN
-
+	void run();
+};

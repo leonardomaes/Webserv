@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../inc/Response/Response.hpp"
+#include "../inc/Response.hpp"
 
 Response::Response()
 {
@@ -168,6 +168,7 @@ void Response::sendFavicon(const Request& obj, int eventFD)
 {
 	std::vector<char> data;
 	std::string path = getRoot() + obj.getPathTarget();
+	printMsg("Favicon(path):" + path);
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
 		throw ResponseException("Invalid (Request::sendFavicon)");
@@ -429,10 +430,10 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 		close(eventFD);
 	}
 	if (obj.getCode() >= 400)
-		std::cout << "LOG:: " << RED << "> Sended Response (" << obj.getCode() << " - "
+		std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
 					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
 	else
-		std::cout << "LOG:: " << GREEN << "> Sended Response (" << obj.getCode() << " - "
+		std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
 					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
 }
 

@@ -12,11 +12,12 @@
 
 #pragma once
 
-#include "Webserv.hpp"
+#include "Header.hpp"
 #include "Request.hpp"
-#include "Response/Response.hpp"
+#include "Response.hpp"
 #include "Config.hpp"
 #include "Utils.hpp"
+#include "Webserv.hpp"
 
 class Client
 {
@@ -24,6 +25,7 @@ private:
 	int			_ClientFD;
 	Request		_request;
 	Response	_response;
+	ServerConfig _conf;
 
 // Functions
 public:
@@ -31,10 +33,11 @@ public:
 	Client(const Client& obj);
 	// Client& operator=(const Client& obj);
 	~Client();
-	Client(int fd, int epfd, ServerConfig conf);
+	Client(int fd, ServerConfig conf);
 
 // Getter
 	int getClientFD();
+	ServerConfig getConfig();
 
 // Functions
 	void readRequest(int epfd, int eventFD, ServerConfig conf);

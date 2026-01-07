@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../inc/Server.hpp"
+#include "../inc/Webserv.hpp"
 #include "../inc/Config.hpp"
 
 int main(int ac, char **av)
@@ -25,8 +25,8 @@ int main(int ac, char **av)
         configPath = (ac > 1) ? av[1] : "default.conf";
         Config config(configPath);
 
-        Server serv(8080, INADDR_ANY);
-		serv.Start(&config);
+        Webserv engine(&config);
+		engine.run();
     }
     catch(const std::exception& e)
     {

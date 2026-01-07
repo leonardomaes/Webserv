@@ -14,6 +14,7 @@
 
 Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
 {
+	// printMsg("Constructor 1");
 	_header["Host"] = "";
 	_header["Connection"] = "";
 	_header["Accept"] = "";
@@ -22,11 +23,11 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
 	_errorPage[405] = "/error/405.html";
-	_root = "";
 }
 
 Request::Request(const Request& obj)
 {
+	// printMsg("Constructor 2");
 	_method = obj._method;
 	_pathTarget = obj._pathTarget;
 	_protocol = obj._protocol;
@@ -52,6 +53,7 @@ Request::~Request()
 
 Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
 {
+	// printMsg("Constructor 3");
 	_header["Host"] = "";
 	_header["Connection"] = "";
 	_header["Accept"] = "";
@@ -197,6 +199,7 @@ int Request::parsePath()		// TO DO   (Config File)
 		_root = _conf.root;
 		return 200;
 	}
+	printMsg("Root:" + this->_root);
 	int code = 200;
 	if (this->_method == "POST")
 		code = 201;
@@ -341,6 +344,8 @@ void Request::parseRequest(std::string buffer)
 	if (code < 400)
 		code = parseConfig();
 	this->_responseCode = code;
+	printMsg("Root:" + this->_root);
+	printMsg("Target:" + this->_pathTarget);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

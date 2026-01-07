@@ -37,7 +37,7 @@ Client::~Client()
 {
 }
 
-Client::Client(int fd, int epfd, ServerConfig conf) : _ClientFD(fd), _request(conf), _response()
+Client::Client(int fd, ServerConfig conf) : _ClientFD(fd), _request(conf), _response(), _conf(conf)
 {
 	if (_ClientFD < 0)
 		throw ClientException("Accept failed");
@@ -45,14 +45,6 @@ Client::Client(int fd, int epfd, ServerConfig conf) : _ClientFD(fd), _request(co
 	int flags = fcntl(this->_ClientFD, F_GETFL, 0);
 	if (fcntl(this->_ClientFD, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw ClientException("Non-Blocking failed");
-	// Epoll monitor client and stays till event
-	// EPOLLIN
-	// EPOLLET - Each trigger remove the actual event
-	epoll_event client_ev;
-	client_ev.events = EPOLLIN /* | EPOLLET */;
-	client_ev.data.fd = this->_ClientFD;
-	if (epoll_ctl(epfd, EPOLL_CTL_ADD, this->_ClientFD, &client_ev) == -1)
-		throw ClientException("epoll_ctl: ClientFD");
 }
 
 void Client::closeConnection(int epfd)
@@ -94,7 +86,7 @@ void Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 	}
 	buffer[bytes] = '\0';
 	this->_request.parseRequest(buffer);
-	std::cout << "LOG:: " << GREEN << "< Received Request (" << this->_request.getMethod() << " - "
+	std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl << "< Received Request (" << this->_request.getMethod() << " - "
 				<< this->_request.getPathTarget() << ")" << RESET << std::endl;		// LOG
 	// TO DO
 	// Parse of HTTP Request (REQUEST)
@@ -121,6 +113,10 @@ int Client::getClientFD()
 	return this->_ClientFD;
 }
 
+ServerConfig Client::getConfig()
+{
+	return this->_conf;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// EXCEPTIONS ///////////////////////////////////////

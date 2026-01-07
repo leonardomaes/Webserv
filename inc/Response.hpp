@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include "../Webserv.hpp"
-#include "../Request.hpp"
-#include "../Utils.hpp"
+#include "Header.hpp"
+#include "Request.hpp"
+#include "Utils.hpp"
 
 #include <dirent.h>
 #include <sys/stat.h>

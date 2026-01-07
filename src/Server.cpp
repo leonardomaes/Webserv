@@ -36,14 +36,26 @@ Server::Server(const Server& obj)
 Server::~Server()
 {
 	if (this->_SocketFD != -1)
-        close(this->_SocketFD);
+		close(this->_SocketFD);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-Server::Server(int port, u_long interface)
+/* Defining Server Address */
+void Server::SetAddr(int domain, int port, int interface)
+{
+	this->_SocketAddress.sin_family = domain;
+	// Converts port to network byte order
+	this->_SocketAddress.sin_port = htons(port);
+	this->_SocketAddress.sin_addr.s_addr = interface;	// INADDR_ANY (htonl(interface))
+	// INADDR_LOOPBACK: the local machine’s IP address: localhost, or 127.0.0.1
+	// INADDR_ANY: the IP address 0.0.0.0
+	// INADDR_BROADCAST: the IP address 255.255.255.255
+}
+
+Server::Server(const ServerConfig& conf) : _conf(conf)
 {
 	// Establish Connection and define it as non-block
 	if ((this->_SocketFD = socket(AF_INET, SOCK_STREAM/*  | SOCK_NONBLOCK */, 0)) == -1)
@@ -52,39 +64,50 @@ Server::Server(int port, u_long interface)
 	// Sets the address of the server
 	int reusePort = 1;
 	setsockopt(this->_SocketFD, SOL_SOCKET, SO_REUSEPORT, &reusePort, sizeof(reusePort));
+	setsockopt(this->_SocketFD, SOL_SOCKET, SO_REUSEADDR, &reusePort, sizeof(reusePort));
 	memset(&this->_SocketAddress, 0, sizeof(this->_SocketAddress));
-	SetAddr(AF_INET, port, interface);
-
-	// Bind or Connect Socket to Address/Port
-	if (bind(this->_SocketFD, (const sockaddr*)&this->_SocketAddress, sizeof(this->_SocketAddress)) == -1)
-		throw ServerException("Couldn't bind port");
-
-}
-
-/* Defining Server Address */
-void Server::SetAddr(int domain, int port, int interface)
-{
-	this->_SocketAddress.sin_family = domain;
+	this->_SocketAddress.sin_family = AF_INET;
 	// Converts port to network byte order
-	this->_SocketAddress.sin_port = htons(port);
-	this->_SocketAddress.sin_addr.s_addr = htonl(interface);	// INADDR_ANY
+	this->_SocketAddress.sin_port = htons(std::atoi(conf.listen.c_str()));
+	this->_SocketAddress.sin_addr.s_addr = std::atoi(conf.host.c_str());	// INADDR_ANY (htonl(interface))
 	// INADDR_LOOPBACK: the local machine’s IP address: localhost, or 127.0.0.1
 	// INADDR_ANY: the IP address 0.0.0.0
 	// INADDR_BROADCAST: the IP address 255.255.255.255
-}
-
-void	Server::Start(Config *conf)
-{
+	// Bind or Connect Socket to Address/Port
+	if (bind(this->_SocketFD, (const sockaddr*)&this->_SocketAddress, sizeof(this->_SocketAddress)) == -1)
+		throw ServerException("Couldn't bind port");
 	// Server will listen for connections
 	if (listen(this->_SocketFD, MAX_CONNECTIONS) == -1)
 		throw ServerException("Listen failed");
-
 	// Setting as non-blocking
 	int flags = fcntl(this->_SocketFD, F_GETFL, 0);
 	if (fcntl(this->_SocketFD, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw ServerException("Non-Blocking failed");
+}
+
+int Server::acceptClient() const
+{
+	sockaddr_in client_addr;
+	socklen_t addrlen = sizeof(client_addr);
+
+	int client_fd = accept(_SocketFD, (sockaddr*)&client_addr, &addrlen);
+
+	if (client_fd < 0)
+		return -1;
+
+	// Non-blocking
+	int flags = fcntl(client_fd, F_GETFL, 0);
+	if (flags >= 0)
+		fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+
+	return client_fd;
+}
+
+/* void	Server::Start(Config *conf)
+{
+
 	// Create epoll
-	int epfd = epoll_create(MAX_CONNECTIONS); // (MAX + 1)??
+	int epfd = epoll_create(MAX_CONNECTIONS);
 	// Epoll warn new reads/client with EPOLLIN
 	struct epoll_event ev;
 	memset(&ev, 0, sizeof(ev));
@@ -133,16 +156,16 @@ void	Server::Start(Config *conf)
 		}
 	}
 	// Cleanup after loop exits
-    std::cout << "\nShutting down gracefully\n" << std::endl;
-    close(epfd);
-    close(this->_SocketFD);
+	std::cout << "\nShutting down gracefully\n" << std::endl;
+	close(epfd);
+	close(this->_SocketFD);
 
 	// Close connection to clients
 	for (int it = 0; it < MAX_CONNECTIONS; it++)
 	{
 		_clients[it].closeConnection(epfd);
 	}
-}
+} */
 		//
 		// 					  HEADER
 		//		{HTTP/Version Status Status-Message}
@@ -172,9 +195,14 @@ void	Server::Start(Config *conf)
 ///////////////////////////////////////// GETTER /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
-int Server::getSocketFD()
+int Server::getSocketFD() const
 {
 	return this->_SocketFD;
+}
+
+const ServerConfig& Server::getConfig() const
+{
+	return _conf;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
