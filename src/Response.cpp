@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/03 00:06:10 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/08 23:09:45 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -297,15 +297,60 @@ void Response::handlePOST(const Request& obj, int eventFD)
 
 void Response::handleDELETE(const Request& obj, int eventFD)
 {
+	// checking for request errors
 	if (obj.getCode() >= 400)
 	{
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
 	}
-	
-	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
-	std::string body = this->getContent("delete_success.html");
-	respond(header, body, eventFD);
+
+	// fuild full path (root + target path)
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+	printMsg("Received DELETE request for: " + fullPath);
+
+	// learn more about traverse atacks and how to avoid them
+
+	// check if resource exists
+	struct stat pathStat;
+	if (stat(fullPath.c_str(), &pathStat) != 0)
+	{
+		// resource not found
+		printMsg("Resource not found: " + fullPath);
+		handleERROR(obj, 404, eventFD);
+		return;
+	}
+
+	// check if it is a directory (folders cannot be deleted)
+	if (S_ISDIR(pathStat.st_mode))
+	{
+		printMsg("Cannot delete a folder: " + fullPath);
+		handleERROR(obj, 403, eventFD);
+		return;		
+	}
+
+	// check file permissions (write)
+	if (access(fullPath.c_str(), R_OK) != 0)
+	{
+		printMsg("Permission denied for: " + fullPath);
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+
+	// delete file, if it fails return error
+	if (unlink(fullPath.c_str()) != 0)
+	{
+		printMsg("File delition failed for: " + fullPath);
+		handleERROR(obj, 500, eventFD);
+		return;
+	}
+
+	// print a log message for sucess
+	printMsg("File sucessfull deleted: " + fullPath);
+
+	// return a message with code 204 for client (just header, no body)
+	std::string header = "HTTP/1.1 204 No Content\r\n"
+						 "Connection: close\r\n\r\n";
+	send(eventFD, header.c_str(), header.size(), 0);
 }
 
 std::string Response::defaultErrorPage(int error)
