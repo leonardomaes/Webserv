@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/07 19:23:56 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/08 00:33:09 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -336,7 +336,7 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	}
 
 	// delete file, if it fails return error
-	if (unlink(fullPath.c_str() != 0))
+	if (unlink(fullPath.c_str()) != 0)
 	{
 		printMsg("File delition failed for: " + fullPath);
 		handleERROR(obj, 500, eventFD);
@@ -345,20 +345,11 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// print a log message for sucess
 	printMsg("File sucessfull deleted: " + fullPath);
-	
-/*
-Status Codes to Use
-    204 No Content: Standard response for successful DELETE (no response body)
-    200 OK: Alternative with confirmation message body
-    404 Not Found: Resource doesn't exist
-    403 Forbidden: Permission denied or directory deletion attempt
-    405 Method Not Allowed: DELETE not permitted for this route
-    500 Internal Server Error: Filesystem operation failed
-*/
-	
-	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
-	std::string body = this->getContent("delete_success.html");
-	respond(header, body, eventFD);
+
+	// return a message with code 204 for client (just header, no body)
+	std::string header = "HTTP/1.1 204 No Content\r\n"
+						 "Connection: close\r\n\r\n";
+	send(eventFD, header.c_str(), header.size(), 0);
 }
 
 std::string Response::defaultErrorPage(int error)
