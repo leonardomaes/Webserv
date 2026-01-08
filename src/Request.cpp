@@ -23,6 +23,9 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
 	_errorPage[405] = "/error/405.html";
+	_body = "";
+	_root = "";
+	_query = "";
 }
 
 Request::Request(const Request& obj)
@@ -36,6 +39,7 @@ Request::Request(const Request& obj)
 	_errorPage = obj._errorPage;
 	_conf = obj._conf;
 	_root = obj._root;
+	_query = obj._query;
 }
 
 // Request& Request::operator=(const Request& obj)
@@ -65,6 +69,7 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	_conf = conf;
 	_body = "";
 	_root = "";
+	_query = "";
 }
 
 int Request::fileOpen(std::string target)
@@ -98,9 +103,8 @@ int Request::parseFirstLine(std::string line)
 		this->_protocol.insert(_protocol.end(), line[i++]);
 	if (_protocol != "HTTP/1.1" && code < 400)
 		code = 400;
-	if (code >= 400)
-		_pathTarget = this->_errorPage[code];
-	// std::cout << "DBG::" << _protocol << "(protocol - 1)" << std::endl;
+	// if (code >= 400)
+	// 	_pathTarget = this->_errorPage[code];
 	return code;
 }
 
@@ -318,6 +322,21 @@ std::map<std::string, std::string> Request::parseUrlEncodedBody() const
 	return result;
 }
 
+void Request::parseTarget(const std::string& target)
+{
+	size_t qpos = target.find('?');
+	if (qpos == std::string::npos)
+	{
+		_pathTarget = target;
+		_query = "";
+	}
+	else
+	{
+		_pathTarget = target.substr(0, qpos);
+		_query = target.substr(qpos);
+	}
+}
+
 void Request::parseRequest(std::string buffer)
 {
 	std::string line;
@@ -328,9 +347,10 @@ void Request::parseRequest(std::string buffer)
 		code = 400;
 	while (std::getline(request, line))
 	{
-		if (this->_firstLine)
+		if (_firstLine)
 		{
 			code = this->parseFirstLine(line);
+			parseTarget(_pathTarget);
 			if (code >= 400)
 				break ;
 			continue;

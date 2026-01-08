@@ -22,6 +22,7 @@ private:
 	// Request info
 	std::string _method;
 	std::string _pathTarget;
+	std::string _query;
 	std::string _protocol;
 	std::string _root;
 	std::map<std::string, std::string> _header;
@@ -45,6 +46,7 @@ private:
 	size_t getContentLength() const;
 	void parseBody(std::string &buffer, size_t header_end);
 	std::string decodeUrl(const std::string &str) const;
+	void parseTarget(const std::string& target);
 public:
 	Request();
 	Request(const Request& obj);
