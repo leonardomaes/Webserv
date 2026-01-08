@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/08 23:09:45 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/08 23:49:56 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -301,14 +301,20 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	if (obj.getCode() >= 400)
 	{
 		handleERROR(obj, obj.getCode(), eventFD);
-		return ;
+		return;
 	}
 
-	// fuild full path (root + target path)
+	// build full path (root + target path)
 	std::string fullPath = this->getRoot() + obj.getPathTarget();
 	printMsg("Received DELETE request for: " + fullPath);
 
-	// learn more about traverse atacks and how to avoid them
+	// avoid path traversal (security issue)
+	if (obj.getPathTarget().find("..") != std::string::npos)
+	{
+		printMsg("Path traversal attempt");
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
 
 	// check if resource exists
 	struct stat pathStat;
@@ -329,7 +335,7 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	}
 
 	// check file permissions (write)
-	if (access(fullPath.c_str(), R_OK) != 0)
+	if (access(fullPath.c_str(), W_OK) != 0)
 	{
 		printMsg("Permission denied for: " + fullPath);
 		handleERROR(obj, 403, eventFD);
