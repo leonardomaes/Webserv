@@ -23,6 +23,7 @@ private:
 	std::string _method;
 	std::string _pathTarget;
 	std::string _query;
+	std::map<std::string, std::string> _queryContent;
 	std::string _protocol;
 	std::string _root;
 	std::map<std::string, std::string> _header;

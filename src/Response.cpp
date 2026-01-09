@@ -43,24 +43,6 @@ Response::~Response()
 
 void Response::FillStatus()
 {
-	// this->_status = {{100, "Continue"}, {101, "Switching Protocols"},
-	// 		{102, "Processing"}, {103, "Early Hints"}, {200, "OK"}, {201, "Created"},
-	// 		{202, "Accepted"}, {203, "Non-Authoritative Information"}, {204, "No Content"},
-	// 		{205, "Reset Content"}, {206, "Partial Content"}, {207, "Multi-Status"},
-	// 		{208, "Already Reported"}, {226, "IM Used"}, {300, "Multiple Choices"}, {301, "Moved Permanently"},
-	// 		{302, "Found"}, {303, "See Other"}, {304, "Not Modified"}, {305, "Use Proxy"}, {306, "Unused"},
-	// 		{307, "Temporary Redirect"}, {308, "Permanent Redirect"}, {400, "Bad Request"}, {401, "Unauthorized"},
-	// 		{402, "Payment Required"}, {403, "Forbidden"}, {404, "Not Found"}, {405, "Method Not Allowed"},
-	// 		{406, "Not Acceptable"}, {407, "Proxy Authentication Required"}, {408, "Request Timeout"}, {409, "Conflict"},
-	// 		{410, "Gone"}, {411, "Length Required"}, {412, "Precondition Failed"}, {413, "Content Too Large"},
-	// 		{414, "URI Too Long"}, {415, "Unsupported Media Type"}, {416, "Range Not Satisfiable"}, {417, "Expectation Failed"},
-	// 		{418, "I'm a teapot"}, {421, "Misdirected Request"}, {422, "Unprocessable Content"}, {423, "Locked"},
-	// 		{424, "Failed Dependency"}, {425, "Too Early"}, {426, "Upgrade Required"}, {428, "Precondition Required"},
-	// 		{429, "Too Many Requests"}, {431, "Request Header Fields Too Large"}, {451, "Unavailable For Legal Reasons"},
-	// 		{500, "Internal Server Error"}, {501, "Not Implemented"}, {502, "Bad Gateway"}, {503, "Service Unavailable"},
-	// 		{504, "Gateway Timeout"}, {505, "HTTP Version Not Supported"}, {506, "Variant Also Negotiates"},
-	// 		{507, "Insufficient Storage"}, {508, "Loop Detected"}, {510, "Not Extended"}, {511, "Network Authentication Required"}};
-
 	_status[100] = "Continue";
 	_status[101] = "Switching Protocols";
 	_status[102] = "Processing";
@@ -130,6 +112,40 @@ void Response::FillStatus()
 	_status[511] = "Network Authentication Required";
 }
 
+std::string Response::defaultErrorPage(int error)
+{
+	std::stringstream ss;
+
+	ss << "<!DOCTYPE html>\n";
+	ss << "<html>\n";
+	ss << "<head>\n";
+	ss << "<meta charset=\"UTF-8\">\n";
+	ss << "<title>" << error << " " << _status[error] << "</title>\n";
+	ss << "<style>\n";
+	ss << "body { font-family: Arial; background-color: #f4f4f4; text-align: center; padding-top: 10%; }\n";
+	ss << "h1 { font-size: 48px; }\n";
+	ss << "p { font-size: 18px; }\n";
+	ss << "</style>\n";
+	ss << "</head>\n";
+	ss << "<body>\n";
+	ss << "<h1>" << error << " " << _status[error] << "</h1>\n";
+	ss << "<p>The server encountered an error while processing your request.</p>\n";
+	ss << "<br><br>";
+	ss << "<table width=\"60%\" align=\"center\">";
+	ss << "<tr>";
+	ss << "<td align=\"center\">";
+	ss << "<a href=\"/index.html\">";
+	ss << "<input type=\"button\" value=\"Return to Home Page\">";
+	ss << "</a>";
+	ss << "</td>";
+	ss << "</tr>";
+	ss << "</table>";
+	ss << "</body>\n";
+	ss << "</html>\n";
+
+	return ss.str();
+}
+
 std::string Response::getContent(std::string filename)	// Add dynamic error based in http code (TO DO)
 {
 	std::string result;
@@ -156,7 +172,6 @@ std::string Response::getStatus(const Request& obj)
 	std::stringstream ss;
 	if (obj.getCode() != 200)
 	{
-		//std::cout << "-DBG::" << obj.getProtocol() << "(Protocol - 2)" << std::endl;	// DELETE
 		ss << obj.getCode();
 		status = obj.getProtocol() + " " + ss.str() + " " + _status[obj.getCode()] + "\r\n";
 		return status;
@@ -272,31 +287,14 @@ void Response::handlePOST(const Request& obj, int eventFD)
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
 	}
-	// std::string filename = getRoot() + obj.getPathTarget() + '/' + obj.getBodyContent("filename");	// Erro (Need to remove one slash bar from full path)
-	// printMsg("Filename(Response):" + filename);
-	// if (obj.getBodyContent("filename").find("..") != std::string::npos || obj.getBodyContent("filename").find('/') != std::string::npos)
-	// {
-	// 	handleERROR(obj, 400, eventFD);
-	// 	return ;
-	// }
-	// std::string content = obj.getBodyContent("content");
-	// std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
-	// if (!file.is_open())
-	// {
-	// 	handleERROR(obj, 403, eventFD);
-	// 	return;
-	// }
-	// file << content;
-	// file.close();
-
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
 	std::string body;
 	if (obj.isMultipart())
 		body = getContent("upload_success.html");
 	else	
 		body = getContent("post_success.html");
-	printMsg(header);
-	printMsg(body);
+	// printMsg(header);
+	// printMsg(body);
 	respond(header, body, eventFD);
 }
 
@@ -313,41 +311,6 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	respond(header, body, eventFD);
 }
 
-std::string Response::defaultErrorPage(int error)
-{
-	std::stringstream ss;
-
-	ss << "<!DOCTYPE html>\n";
-	ss << "<html>\n";
-	ss << "<head>\n";
-	ss << "<meta charset=\"UTF-8\">\n";
-	ss << "<title>" << error << " " << _status[error] << "</title>\n";
-	ss << "<style>\n";
-	ss << "body { font-family: Arial; background-color: #f4f4f4; text-align: center; padding-top: 10%; }\n";
-	ss << "h1 { font-size: 48px; }\n";
-	ss << "p { font-size: 18px; }\n";
-	ss << "</style>\n";
-	ss << "</head>\n";
-	ss << "<body>\n";
-	ss << "<h1>" << error << " " << _status[error] << "</h1>\n";
-	ss << "<p>The server encountered an error while processing your request.</p>\n";
-	ss << "<br><br>";
-	ss << "<table width=\"60%\" align=\"center\">";
-	ss << "<tr>";
-	ss << "<td align=\"center\">";
-	ss << "<a href=\"/index.html\">";
-	ss << "<input type=\"button\" value=\"Return to Home Page\">";
-	ss << "</a>";
-	ss << "</td>";
-	ss << "</tr>";
-	ss << "</table>";
-	ss << "</body>\n";
-	ss << "</html>\n";
-
-	return ss.str();
-}
-
-
 void Response::handleERROR(const Request& obj, int error, int eventFD)
 {
 	std::stringstream ss1;
@@ -360,7 +323,6 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 	path.append(obj.getErrorPage(error));
 
 	std::ifstream file(path.c_str(), std::ios::in);
-	std::cout << "Path:" << path << std::endl;
 	if (file.is_open())
 	{
 		char buffer[4096];
@@ -370,9 +332,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 	}
 	else
 	{
-		std::cout << "LOG:: " << RED
-				  << "Couldn't open error file, generating default error page (Response::handleERROR)\n"
-				  << RESET;
+		std::cout << "LOG:: " << RED << "Couldn't open error file, generating default error page (Response::handleERROR)\n" << RESET;
 		body = defaultErrorPage(error);
 	}
 
@@ -381,7 +341,6 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 
 	std::string response;
 	response.reserve(header.size() + body.size() + 128);
-
 	response = header +
 			   "Content-Type: text/html; charset=UTF-8\r\n"
 			   "Content-Length: " + ss2.str() + "\r\n"
@@ -391,25 +350,6 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 
 	send(eventFD, response.c_str(), response.size(), 0);
 }
-
-
-// void Response::handleERROR(Request& obj, int error, int eventFD)
-// {
-// 	std::stringstream ss1;
-// 	ss1 << error;
-// 	std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
-// 	std::string path = getRoot();
-// 	path.append(obj.getErrorPage(error));
-// 	std::ifstream file(path.c_str(), std::ios::in);
-// 	std::string body;
-// 	if (!file.is_open())
-// 	{
-// 		std::cout << "LOG:: " << RED << "Couldn't open error file; (Response::handleERROR)\n" << RESET;
-// 		body = "";
-// 	}
-// 	char buffer[4096];
-// 	while (file.read(buffer, sizeof(buffer)) ||		auto_index off;ONS ///////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
 
 // Response starts here
 void Response::generateResponse(const Request& obj, int epfd, int eventFD)
@@ -423,9 +363,6 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	try
 	{
 		std::map<std::string, MethodHandler>::iterator it;
-		std::cout << "Method:" << obj.getMethod() << std::endl;	// Delete
-		std::cout << "Target:" << obj.getPathTarget() << std::endl;	// Delete
-		std::cout << "Code:" << obj.getCode() << std::endl;	// Delete
 		it = _handler.find(obj.getMethod());
 		if (it == _handler.end())
 			throw ResponseException("Method Not Allowed");

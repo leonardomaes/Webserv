@@ -150,8 +150,6 @@ std::map<std::string, std::string> Request::parseUrlEncodedBody()
 
 		if (val == "")
 			_responseCode = 400;
-		// std::cout << ">" << key << "<" << std::endl;
-		// std::cout << ">" << val << "<" << std::endl;
 		result[key] = val;
 	}
 
@@ -237,7 +235,7 @@ void Request::parseMultipartImage()
 		_responseCode = 400;
 		return ;
 	}
-	pos += boundary.length() + 2;	// skip boundary + \r\n
+	pos += boundary.length() + 2;
 
 	size_t headers_end = _body.find("\r\n\r\n", pos);
 	if (headers_end == std::string::npos)
@@ -261,7 +259,7 @@ void Request::parseMultipartImage()
 		return;
 	}
 
-	data_end -= 2; // remove trailing \r\n
+	data_end -= 2;
 	std::string file_data = _body.substr(data_start, data_end - data_start);
 	std::string upload_path = _root + _pathTarget + "/" + filename;
 
@@ -386,7 +384,6 @@ int Request::parsePath()
 	{
 		if (this->_method != "GET")
 			return 405;
-		// _pathTarget = "/icon/favicon.ico";
 		_root = _conf.root;
 		return 200;
 	}
@@ -399,7 +396,7 @@ int Request::parsePath()
 		return code;
 	if (this->fileOpen(this->_pathTarget))		// Generic case
 		return code;
-	else											// Error case
+	else										// Error case
 	{
 		this->_pathTarget = "/error/404.html";
 		return 404;
@@ -407,7 +404,7 @@ int Request::parsePath()
 	return code;
 }
 
-int Request::parseConfig()		// Missing Config file to make
+int Request::parseConfig()
 {
 	int code = 200;
 	if (this->_method == "POST")
@@ -424,7 +421,7 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 	if (header_end == std::string::npos)
 		return;
 
-	size_t body_start = header_end + 4; // \r\n\r\n
+	size_t body_start = header_end + 4;
 
 	if (body_start >= buffer.size())
 		return;
@@ -453,7 +450,7 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 	else if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 	{
 		_bodyContent = parseUrlEncodedBody();
-		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];
+		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
 		printMsg("Filename(Response):" + filename);
 		if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find("/") != std::string::npos)
 		{
@@ -488,8 +485,17 @@ void Request::parseTarget(const std::string& target)
 	}
 	else
 	{
+		_query = target.substr(qpos+1);
 		_pathTarget = target.substr(0, qpos);
-		_query = target.substr(qpos);
+
+		size_t eq = _query.find('=');
+		if (eq != std::string::npos)
+		{
+			std::string key = decodeUrl(_query.substr(0, eq));
+			std::string val = decodeUrl(_query.substr(eq + 1));
+			_queryContent[key] = val;
+			_pathTarget += '/' + _queryContent[key];
+		}
 	}
 }
 
