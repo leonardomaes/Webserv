@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:25:57 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/03 00:05:35 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/09 14:23:18 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "Header.hpp"
 #include "Config.hpp"
 #include "Utils.hpp"
+#include <sys/stat.h>
 
 class Request
 {

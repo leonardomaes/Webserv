@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/03 00:05:02 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/09 14:27:40 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,7 +210,24 @@ int Request::parsePath()		// TO DO   (Config File)
 	code = validLocation(this->_pathTarget);
 	if (code >= 400)
 		return code;
-	if (this->fileOpen(this->_pathTarget))		// Generic case
+	// DELETE special case (only checks existance)
+	if (this->_method == "DELETE")
+	{
+		std::string fullPath = this->_root + this->_pathTarget;
+		struct stat pathStat;
+		if (stat(fullPath.c_str(), &pathStat) == 0)
+		{
+			printMsg("DELETE target exists: " + fullPath);
+			return 200;
+		}
+		else
+		{
+			printMsg("DELETE target not found: " + fullPath);
+			this->_pathTarget = "/error/404.html";
+			return 404;
+		}
+	}
+	if (this->fileOpen(this->_pathTarget))		// Generic case (GET/POST)
 		return code;
 	else											// Error case
 	{
