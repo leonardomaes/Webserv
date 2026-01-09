@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/08 23:49:56 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/09 00:34:13 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -295,12 +295,60 @@ void Response::handlePOST(const Request& obj, int eventFD)
 	respond(header, body, eventFD);
 }
 
+bool Response::isDELETEAllowed(const Request& obj)
+{
+	const ServerConfig *server = obj.getConfig();
+	if (!server)
+		return (false);
+
+	std::string path = obj.getPathTarget();
+
+	// finding marching locations (as implemented in AutoIndex)
+	const LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+
+	for (size_t i = 0; i < server->locations.size(); ++i)
+	{
+		const LocationConfig &loc = server->locations[i];
+		std::string locPath = loc.path;
+
+		if (path.find(locPath) == 0)
+		{
+			if (locPath.length() > longestMatch)
+			{
+				longestMatch = locPath.length();
+				bestMatch = &loc;
+			}
+		}
+	}
+
+	if (!bestMatch)			// if no location was found
+		return (false);
+
+	//Check if DELETE is a method allowed
+	for (size_t i = 0; i < bestMatch->allow_methods.size(); ++i)
+	{
+		if (bestMatch->allow_methods[i] == "DELETE")
+			return (true);
+	}
+
+	return (false);
+}
+
 void Response::handleDELETE(const Request& obj, int eventFD)
 {
 	// checking for request errors
 	if (obj.getCode() >= 400)
 	{
 		handleERROR(obj, obj.getCode(), eventFD);
+		return;
+	}
+
+	// check if DELETE is an allowed method for this location
+	if (!isDELETEAllowed(obj))
+	{
+		printMsg("DELETE method is not allowed at this location");
+		handleERROR(obj, 405, eventFD);
 		return;
 	}
 
