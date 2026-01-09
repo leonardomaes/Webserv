@@ -27,6 +27,7 @@ private:
 	std::string _root;
 	std::map<std::string, std::string> _header;
 	std::string _body;
+	std::map<std::string, std::string> _bodyContent;
 
 	// Variables
 	bool		_firstLine;
@@ -37,16 +38,23 @@ private:
 	ServerConfig _conf;
 
 	// Functions
-	int parseFirstLine(std::string line);
-	int	parsePath();
-	int validLocation(std::string filename);
-	int fileOpen(std::string filename);
-	void parseHeader(std::string line);
-	int parseConfig();
-	size_t getContentLength() const;
-	void parseBody(std::string &buffer, size_t header_end);
-	std::string decodeUrl(const std::string &str) const;
-	void parseTarget(const std::string& target);
+	int			parseFirstLine(std::string line);
+	int			parsePath();
+	int			validLocation(std::string filename);
+	int			fileOpen(std::string filename);
+	void		parseHeader(std::string line);
+	int			parseConfig();
+	size_t 		getContentLength() const;
+	void		parseBody(std::string &buffer, size_t header_end);
+	std::string	decodeUrl(const std::string &str) const;
+	void		parseTarget(const std::string& target);
+	std::map<std::string, std::string> parseUrlEncodedBody();
+
+	void		parseMultipartImage();
+	std::string getMultipartBoundary();
+	std::string extractFilename(const std::string& headers);
+	std::string sanitizeFilename(const std::string& filename);
+	bool		writeBinaryFile(const std::string& path, const std::string& data);
 public:
 	Request();
 	Request(const Request& obj);
@@ -57,7 +65,6 @@ public:
 
 // Functions
 	void parseRequest(std::string buffer);
-	std::map<std::string, std::string> parseUrlEncodedBody() const;
 
 // Getters
 	std::string getMethod() const;
@@ -67,8 +74,10 @@ public:
 	std::string getConnection() const;
 	std::string getBody() const;
 	int			getCode() const;
+	std::string getBodyContent(std::string key) const;
 	const std::string getErrorPage(int error) const;
 	const ServerConfig *getConfig() const;	// RN: need to add this getter here to access the config info
+	bool isMultipart() const;
 
 // Setters
 	void setPathTarget(const std::string &path);

@@ -154,7 +154,7 @@ std::string Response::getStatus(const Request& obj)
 {
 	std::string status;
 	std::stringstream ss;
-	if (obj.getCode() >= 400)
+	if (obj.getCode() != 200)
 	{
 		//std::cout << "-DBG::" << obj.getProtocol() << "(Protocol - 2)" << std::endl;	// DELETE
 		ss << obj.getCode();
@@ -210,7 +210,7 @@ void Response::handleGET(const Request& obj, int eventFD)
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
 	}
-	if (obj.getPathTarget() == "/icon/favicon.ico")
+	if (obj.getPathTarget() == "/favicon.ico")
 	{
 		sendFavicon(obj, eventFD);
 		return ;
@@ -272,26 +272,31 @@ void Response::handlePOST(const Request& obj, int eventFD)
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
 	}
-	std::map<std::string, std::string> _bodyContent = obj.parseUrlEncodedBody();
-	std::string filename = getRoot() + obj.getPathTarget() + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
-	printMsg("Filename(Response):" + filename);
-	if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find('/') != std::string::npos)
-	{
-		handleERROR(obj, 400, eventFD);
-		return ;
-	}
-	std::string content = _bodyContent["content"];
-	std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
-	if (!file.is_open())
-	{
-		handleERROR(obj, 403, eventFD);
-		return;
-	}
-	file << content;
-	file.close();
+	// std::string filename = getRoot() + obj.getPathTarget() + '/' + obj.getBodyContent("filename");	// Erro (Need to remove one slash bar from full path)
+	// printMsg("Filename(Response):" + filename);
+	// if (obj.getBodyContent("filename").find("..") != std::string::npos || obj.getBodyContent("filename").find('/') != std::string::npos)
+	// {
+	// 	handleERROR(obj, 400, eventFD);
+	// 	return ;
+	// }
+	// std::string content = obj.getBodyContent("content");
+	// std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
+	// if (!file.is_open())
+	// {
+	// 	handleERROR(obj, 403, eventFD);
+	// 	return;
+	// }
+	// file << content;
+	// file.close();
 
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
-	std::string body = this->getContent("post_success.html");
+	std::string body;
+	if (obj.isMultipart())
+		body = getContent("upload_success.html");
+	else	
+		body = getContent("post_success.html");
+	printMsg(header);
+	printMsg(body);
 	respond(header, body, eventFD);
 }
 
@@ -326,6 +331,16 @@ std::string Response::defaultErrorPage(int error)
 	ss << "<body>\n";
 	ss << "<h1>" << error << " " << _status[error] << "</h1>\n";
 	ss << "<p>The server encountered an error while processing your request.</p>\n";
+	ss << "<br><br>";
+	ss << "<table width=\"60%\" align=\"center\">";
+	ss << "<tr>";
+	ss << "<td align=\"center\">";
+	ss << "<a href=\"/index.html\">";
+	ss << "<input type=\"button\" value=\"Return to Home Page\">";
+	ss << "</a>";
+	ss << "</td>";
+	ss << "</tr>";
+	ss << "</table>";
 	ss << "</body>\n";
 	ss << "</html>\n";
 
@@ -342,10 +357,10 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 
 	std::string body;
 	std::string path = getRoot();
-	path.append(obj.getErrorPage(error)); // Possible Dynamic change
+	path.append(obj.getErrorPage(error));
 
 	std::ifstream file(path.c_str(), std::ios::in);
-
+	std::cout << "Path:" << path << std::endl;
 	if (file.is_open())
 	{
 		char buffer[4096];
@@ -400,15 +415,17 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 {
 	this->_root = obj.getRoot();
-	printMsg("Body(test):" + obj.getBody() + "<");
+	// printMsg("Body(test):" + obj.getBody() + "<");
 	std::stringstream dbg_ss;
-	printMsg(obj.getPathTarget() + " (target)");
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
 	// ******************************************************************
 	try
 	{
 		std::map<std::string, MethodHandler>::iterator it;
+		std::cout << "Method:" << obj.getMethod() << std::endl;	// Delete
+		std::cout << "Target:" << obj.getPathTarget() << std::endl;	// Delete
+		std::cout << "Code:" << obj.getCode() << std::endl;	// Delete
 		it = _handler.find(obj.getMethod());
 		if (it == _handler.end())
 			throw ResponseException("Method Not Allowed");

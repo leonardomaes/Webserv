@@ -61,16 +61,26 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	_header["Host"] = "";
 	_header["Connection"] = "";
 	_header["Accept"] = "";
-	_errorPage[400] = "/error/400.html";		// Config File
-	_errorPage[401] = "/error/401.html";
-	_errorPage[403] = "/error/403.html";
-	_errorPage[404] = "/error/404.html";
-	_errorPage[405] = "/error/405.html";
+	for (std::map<int, std::string>::iterator it = conf.error_pages.begin(); it != conf.error_pages.end(); it++)
+	{
+		size_t dot = it->second.find('.');
+		// if (dot == std::string::npos)
+		// 	_errorPage[it->first] = it->second;
+		size_t slash = it->second.find('/') + 1;
+		if (slash == std::string::npos)
+			slash = 0;
+		std::stringstream ss;
+		ss << it->first;
+		_errorPage[it->first] = it->second;
+		_errorPage[it->first].replace(slash, dot - slash, ss.str());
+	}
 	_conf = conf;
 	_body = "";
 	_root = "";
 	_query = "";
 }
+
+
 
 int Request::fileOpen(std::string target)
 {
@@ -82,6 +92,193 @@ int Request::fileOpen(std::string target)
 	file.close();
 	return 1;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// POST TEXT ////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+size_t Request::getContentLength() const
+{
+	std::map<std::string, std::string>::const_iterator it;
+
+	it = _header.find("Content-Length");
+	if (it == _header.end())
+		return 0;
+
+	return static_cast<size_t>(std::atoi(it->second.c_str()));
+}
+
+std::string Request::decodeUrl(const std::string &str) const
+{
+	std::string out;
+
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (str[i] == '+')
+			out += ' ';
+		else if (str[i] == '%' && i + 2 < str.size())
+		{
+			char hex[3] = { str[i+1], str[i+2], 0 };
+			out += static_cast<char>(std::strtol(hex, 0, 16));
+			i += 2;
+		}
+		else
+			out += str[i];
+	}
+	return out;
+}
+
+std::map<std::string, std::string> Request::parseUrlEncodedBody()
+{
+	std::map<std::string, std::string> result;
+
+	std::string body = _body;
+	size_t pos;
+
+	while ((pos = body.find('&')) != std::string::npos)
+	{
+		std::string pair = body.substr(0, pos);
+		body.erase(0, pos + 1);
+
+		size_t eq = pair.find('=');
+		if (eq == std::string::npos)
+			continue;
+
+		std::string key = decodeUrl(pair.substr(0, eq));
+		std::string val = decodeUrl(pair.substr(eq + 1));
+
+		if (val == "")
+			_responseCode = 400;
+		// std::cout << ">" << key << "<" << std::endl;
+		// std::cout << ">" << val << "<" << std::endl;
+		result[key] = val;
+	}
+
+	size_t eq = body.find('=');
+	if (eq != std::string::npos)
+	{
+		std::string key = decodeUrl(body.substr(0, eq));
+		std::string val = decodeUrl(body.substr(eq + 1));
+		result[key] = val;
+	}
+	return result;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// POST IMAGE ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+std::string Request::getMultipartBoundary()
+{
+	std::string content_type = _header["Content-Type"];
+	size_t pos = content_type.find("boundary=");
+	if (pos == std::string::npos)
+		return "";
+
+	return "--" + content_type.substr(pos + 9);
+}
+
+std::string Request::extractFilename(const std::string& headers)
+{
+	size_t pos = headers.find("filename=");
+	if (pos == std::string::npos)
+		return "";
+
+	pos += 9;
+	if (headers[pos] == '"')
+		pos++;
+
+	size_t end = headers.find_first_of("\"\r\n", pos);
+	return headers.substr(pos, end - pos);
+}
+
+std::string Request::sanitizeFilename(const std::string& filename)
+{
+	std::string clean;
+
+	for (size_t i = 0; i < filename.size(); i++)
+	{
+		if (isalnum(filename[i]) || filename[i] == '.' || filename[i] == '_')
+			clean += filename[i];
+	}
+
+	if (clean.empty())
+		clean = "upload.bin";
+
+	return clean;
+}
+
+bool Request::writeBinaryFile(const std::string& path, const std::string& data)
+{
+	std::ofstream ofs(path.c_str(), std::ios::binary);
+	if (!ofs.is_open())
+		return false;
+
+	ofs.write(data.data(), data.size());
+	ofs.close();
+	return true;
+}
+
+
+void Request::parseMultipartImage()
+{
+	std::string boundary = getMultipartBoundary();
+	if (boundary.empty())
+	{
+		_responseCode = 400;
+		return ;
+	}
+	size_t pos = _body.find(boundary);
+	if (pos == std::string::npos)
+	{
+		_responseCode = 400;
+		return ;
+	}
+	pos += boundary.length() + 2;	// skip boundary + \r\n
+
+	size_t headers_end = _body.find("\r\n\r\n", pos);
+	if (headers_end == std::string::npos)
+	{
+		_responseCode = 400;
+		return ;
+	}
+	std::string part_headers = _body.substr(pos, headers_end - pos);
+	std::string filename = extractFilename(part_headers);
+	if (filename.empty())
+	{
+		_responseCode = 400;
+		return ;
+	}
+	filename = sanitizeFilename(filename);
+	size_t data_start = headers_end + 4;
+	size_t data_end = _body.find(boundary, data_start);
+	if (data_end == std::string::npos || data_end < 2)
+	{
+		_responseCode = 400;
+		return;
+	}
+
+	data_end -= 2; // remove trailing \r\n
+	std::string file_data = _body.substr(data_start, data_end - data_start);
+	std::string upload_path = _root + _pathTarget + "/" + filename;
+
+	if (!writeBinaryFile(upload_path, file_data))
+	{
+		_responseCode = 500;
+		return;
+	}
+
+	_responseCode = 201;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////// PARSING /////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+
 
 int Request::parseFirstLine(std::string line)
 {
@@ -103,8 +300,6 @@ int Request::parseFirstLine(std::string line)
 		this->_protocol.insert(_protocol.end(), line[i++]);
 	if (_protocol != "HTTP/1.1" && code < 400)
 		code = 400;
-	// if (code >= 400)
-	// 	_pathTarget = this->_errorPage[code];
 	return code;
 }
 
@@ -124,14 +319,6 @@ void Request::parseHeader(std::string line)
 	if (_header[key] == "")
 		_header[key] = value;
 }
-
-// Location
-// Root
-// index
-// Redirect
-// auto_index
-// CGI_PATH
-// Allowed Methods
 
 int Request::validLocation(std::string filename)
 {	// Check if the LOCATION exist
@@ -186,20 +373,20 @@ int Request::validLocation(std::string filename)
 	if (_pathTarget == "/")
 		_pathTarget = _conf.index;
 	if (!allowed)
-		return 405;
+		return 405;  // 404
 	if (this->_method == "POST")
 		return 201;
 	else
 		return 200;
 }
 
-int Request::parsePath()		// TO DO   (Config File)
+int Request::parsePath()
 {
 	if (this->_pathTarget == "/favicon.ico")	// Special case
 	{
 		if (this->_method != "GET")
 			return 405;
-		_pathTarget = "/icon/favicon.ico";
+		// _pathTarget = "/icon/favicon.ico";
 		_root = _conf.root;
 		return 200;
 	}
@@ -232,37 +419,6 @@ int Request::parseConfig()		// Missing Config file to make
 	return code;
 }
 
-size_t Request::getContentLength() const
-{
-	std::map<std::string, std::string>::const_iterator it;
-
-	it = _header.find("Content-Length");
-	if (it == _header.end())
-		return 0;
-
-	return static_cast<size_t>(std::atoi(it->second.c_str()));
-}
-
-std::string Request::decodeUrl(const std::string &str) const
-{
-	std::string out;
-
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		if (str[i] == '+')
-			out += ' ';
-		else if (str[i] == '%' && i + 2 < str.size())
-		{
-			char hex[3] = { str[i+1], str[i+2], 0 };
-			out += static_cast<char>(std::strtol(hex, 0, 16));
-			i += 2;
-		}
-		else
-			out += str[i];
-	}
-	return out;
-}
-
 void Request::parseBody(std::string &buffer, size_t header_end)
 {
 	if (header_end == std::string::npos)
@@ -282,45 +438,45 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 		_responseCode = 400;
 		return;
 	}
-
+	if (content_length > _conf.client_max_body_size)
+	{
+		_responseCode = 413;
+		return ;
+	}
 	_body = buffer.substr(body_start, content_length);
+	std::string content_type = _header["Content-Type"];
+
+	if (content_type.find("multipart/form-data") != std::string::npos)
+	{
+		parseMultipartImage();
+	}
+	else if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
+	{
+		_bodyContent = parseUrlEncodedBody();
+		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];
+		printMsg("Filename(Response):" + filename);
+		if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find("/") != std::string::npos)
+		{
+			_responseCode = 400;
+			return ;
+		}
+		std::string content = _bodyContent["content"];
+		std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
+		if (!file.is_open())
+		{
+			_responseCode = 400;
+			return ;
+		}
+		file << content;
+		file.close();
+	}
+	else
+		_responseCode = 415;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-
-std::map<std::string, std::string> Request::parseUrlEncodedBody() const
-{
-	std::map<std::string, std::string> result;
-
-	std::string body = _body;
-	size_t pos;
-
-	while ((pos = body.find('&')) != std::string::npos)
-	{
-		std::string pair = body.substr(0, pos);
-		body.erase(0, pos + 1);
-
-		size_t eq = pair.find('=');
-		if (eq == std::string::npos)
-			continue;
-
-		std::string key = decodeUrl(pair.substr(0, eq));
-		std::string val = decodeUrl(pair.substr(eq + 1));
-
-		result[key] = val;
-	}
-
-	size_t eq = body.find('=');
-	if (eq != std::string::npos)
-	{
-		std::string key = decodeUrl(body.substr(0, eq));
-		std::string val = decodeUrl(body.substr(eq + 1));
-		result[key] = val;
-	}
-	return result;
-}
 
 void Request::parseTarget(const std::string& target)
 {
@@ -341,17 +497,17 @@ void Request::parseRequest(std::string buffer)
 {
 	std::string line;
 	std::istringstream request(buffer);
-	int code = 0;
+	_responseCode = 200;
 	size_t header_end = buffer.find("\r\n\r\n");
 	if (header_end == std::string::npos)
-		code = 400;
+		_responseCode = 400;
 	while (std::getline(request, line))
 	{
 		if (_firstLine)
 		{
-			code = this->parseFirstLine(line);
+			_responseCode = this->parseFirstLine(line);
 			parseTarget(_pathTarget);
-			if (code >= 400)
+			if (_responseCode >= 400)
 				break ;
 			continue;
 		}
@@ -359,11 +515,10 @@ void Request::parseRequest(std::string buffer)
 			break;
 		parseHeader(line);
 	}
-	if (code < 400)
+	if (_responseCode < 400)
+		_responseCode = parseConfig();
+	if (_responseCode < 400 && _method == "POST")
 		parseBody(buffer, header_end);
-	if (code < 400)
-		code = parseConfig();
-	this->_responseCode = code;
 	printMsg("Root:" + this->_root);
 	printMsg("Target:" + this->_pathTarget);
 }
@@ -402,15 +557,23 @@ std::string Request::getConnection() const
 	return _header.at("Connection");
 }
 
+std::string Request::getBodyContent(std::string key) const
+{
+	return _bodyContent.at(key);
+}
+
 const std::string Request::getErrorPage(int error) const
 {
-    std::map<int, std::string>::const_iterator it =
-        _errorPage.find(error);
+	std::map<int, std::string>::const_iterator it = _errorPage.find(error);
 
-    if (it == _errorPage.end())
-        return "";
+	if (it == _errorPage.end())
+	{
+		std::stringstream ss;
+		ss << "error/" << error << ".html";
+		return ss.str();
+	}
 
-    return it->second;
+	return it->second;
 }
 
 std::string Request::getBody() const
@@ -423,11 +586,18 @@ const ServerConfig *Request::getConfig() const
 	return &_conf;
 }
 
+bool Request::isMultipart() const
+{
+	std::string ct = _header.at("Content-Type");
+	return ct.find("multipart/form-data") != std::string::npos;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// SETTER /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
 void Request::setPathTarget(const std::string &path)
 {
-    _pathTarget = path;
+	_pathTarget = path;
 }

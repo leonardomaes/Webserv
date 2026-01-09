@@ -24,10 +24,12 @@ class Client
 private:
 	int			_ClientFD;
 	Request		_request;
+	std::string	_recvBuffer;
 	Response	_response;
 	ServerConfig _conf;
-
-// Functions
+	
+	// Functions
+	size_t extractContentLength(const std::string& buffer);
 public:
 	Client();
 	Client(const Client& obj);
@@ -40,7 +42,7 @@ public:
 	ServerConfig getConfig();
 
 // Functions
-	void readRequest(int epfd, int eventFD, ServerConfig conf);
+	bool readRequest(int epfd, int eventFD, ServerConfig conf);
 	void sendResponse(int epfd,  int eventFD);
 	void closeConnection(int epfd);
 

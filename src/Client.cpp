@@ -63,6 +63,19 @@ void Client::closeConnection(int epfd)
 
 }
 
+size_t Client::extractContentLength(const std::string& buffer)
+{
+	size_t pos = buffer.find("Content-Length:");
+	if (pos == std::string::npos)
+		return 0;
+
+	pos += 15;
+	while (pos < buffer.size() && buffer[pos] == ' ')
+		pos++;
+
+	return std::strtoul(buffer.c_str() + pos, NULL, 10);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
@@ -70,34 +83,46 @@ void Client::closeConnection(int epfd)
 
 
 
-void Client::readRequest(int epfd, int eventFD, ServerConfig conf)
+bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 {
-	this->_request = Request(conf);
-	char buffer[1024];
-	// Received HTTP
-	ssize_t bytes = recv(eventFD, buffer, sizeof(buffer) - 1, 0);
-	if ((bytes <= 0))	// Error(-1) or closed by EOF (0)
+	char buffer[4096];
+	ssize_t bytes;
+	while (true)
 	{
-// RM: I sugest to delete this commented part bellow and do it inside closeConnection(epfd);
-//		close(eventFD);
-//		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
-		closeConnection(epfd);
-		throw ClientException("Read failed");
+		bytes = recv(eventFD, buffer, sizeof(buffer), 0);
+		if (bytes > 0)
+		{
+			_recvBuffer.append(buffer, bytes);
+			continue;
+		}
+		if (bytes == 0)
+		{
+			closeConnection(epfd);
+			throw ClientException("client disconnected");
+		}
+		break;
 	}
-	buffer[bytes] = '\0';
-	this->_request.parseRequest(buffer);
-	std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl << "< Received Request (" << this->_request.getMethod() << " - "
-				<< this->_request.getPathTarget() << ")" << RESET << std::endl;		// LOG
-	// TO DO
-	// Parse of HTTP Request (REQUEST)
+	size_t header_end = _recvBuffer.find("\r\n\r\n");
+	if (header_end == std::string::npos)
+		return false;
+	size_t content_length = extractContentLength(_recvBuffer);
+	size_t total_size = header_end + 4 + content_length;
+	if (_recvBuffer.size() < total_size)
+		return false;	// Incomplete body
+	this->_request = Request(conf);
+	this->_request.parseRequest(_recvBuffer);
+	_recvBuffer.clear();
+	std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl
+					<< "< Received Request (" << this->_request.getMethod() << " - "
+					<< this->_request.getPathTarget() << ")" << RESET << std::endl;
 	printMsg("(START)");
 	printMsg(buffer);
 	printMsg("(END)");
+	return true;
 }
 
 void Client::sendResponse(int epfd, int eventFD)
 {
-
 	this->_response = Response();
 	printMsg("Body(test):" + this->_request.getBody() + "<");
 	this->_response.generateResponse(this->_request, epfd, eventFD);

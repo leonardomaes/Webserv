@@ -93,8 +93,8 @@ void Webserv::run()
 				{
 					// it->second.readRequest(_epfd, fd, it->second.getConfig());
 					// it->second.sendResponse(_epfd, fd);
-                    _clients[fd].readRequest(_epfd, fd, _clients[fd].getConfig());
-                    _clients[fd].sendResponse(_epfd, fd);
+					if (_clients[fd].readRequest(_epfd, fd, _clients[fd].getConfig()))
+						_clients[fd].sendResponse(_epfd, fd);
 				}
 				catch(const std::exception& e)
 				{
