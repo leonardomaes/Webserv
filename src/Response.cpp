@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/09 00:34:13 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 16:16:17 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -287,15 +287,46 @@ void Response::handlePOST(const Request& obj, int eventFD)
 		handleERROR(obj, obj.getCode(), eventFD);
 		return ;
 	}
+
+	std::string body = obj.getBody();
+
+    // check if this is a DELETE request masked as a POST (to allow delete.html to work)
+    if (body.find("_method=DELETE") != std::string::npos)
+    {
+        printMsg("Method override detected: POST -> DELETE");
+
+        // extract the filename from the "id" field
+        std::string filename = getFormValue(body, "id");
+        if (filename.empty())
+        {
+            handleERROR(obj, 400, eventFD); // if no ID provided return an error
+            return;
+        }
+
+        // create a temp Request object (Copy of the original)
+        Request tempReq = obj; 
+
+        // modify the request to look like a DELETE request (adapt path and set method)
+        std::string currentPath = obj.getPathTarget();
+        if (currentPath[currentPath.length() - 1] != '/')
+            currentPath += "/";
+        tempReq.setPathTarget(currentPath + filename);
+        tempReq.setMethod("DELETE");
+
+        // forward to the request into the DELETE handler
+        handleDELETE(tempReq, eventFD);
+        return;
+    }
+
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
-	std::string body;
+	std::string responseBody;
 	if (obj.isMultipart())
-		body = getContent("upload_success.html");
+		responseBody = getContent("upload_success.html");
 	else	
-		body = getContent("post_success.html");
+		responseBody = getContent("post_success.html");
 	// printMsg(header);
 	// printMsg(body);
-	respond(header, body, eventFD);
+	respond(header, responseBody, eventFD);
 }
 
 bool Response::isDELETEAllowed(const Request& obj)

@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 03:54:54 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 15:54:36 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -483,6 +483,15 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 	else if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 	{
 		_bodyContent = parseUrlEncodedBody();
+
+		// to allow the DELETE form to work
+		// if this is a method override (DELETE) does not do like a file upload
+		if (_bodyContent.find("_method") != _bodyContent.end())
+			return;
+		// if filenamane or content are missing it's an DELETE and not a file upload
+		if (_bodyContent.find("filename") == _bodyContent.end() || _bodyContent.find("content") == _bodyContent.end())
+			return;
+
 		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
 		printMsg("Filename(Response):" + filename);
 		if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find("/") != std::string::npos)
@@ -640,3 +649,10 @@ void Request::setPathTarget(const std::string &path)
 {
 	_pathTarget = path;
 }
+
+void Request::setMethod(std::string method)
+{
+	_method = method;
+}
+
+
