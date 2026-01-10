@@ -20,15 +20,29 @@
     <tr>
         <td align="center">
             <form method="POST" action="/delete">
+                <!-- Method Override for Option 2 -->
                 <input type="hidden" name="_method" value="DELETE">
 
                 <p>
-                    <label>Resource ID:</label><br>
-                    <input type="text" name="id">
+                    <label>Filename to delete (in /delete/ folder):</label><br>
+                    <input type="text" name="id" placeholder="testfile.txt">
                 </p>
 
                 <input type="submit" value="Send DELETE Request">
             </form>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+<!-- Return Button (Matches your other pages) -->
+<table width="60%" align="center">
+    <tr>
+        <td align="center">
+            <a href="/index.html">
+                <input type="button" value="Return to Home Page">
+            </a>
         </td>
     </tr>
 </table>

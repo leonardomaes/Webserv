@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:25:57 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/09 14:23:18 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 03:53:14 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ private:
 public:
 	Request();
 	Request(const Request& obj);
-	// Request& operator=(const Request& obj);
+	Request &operator=(const Request& obj);
 	~Request();
 	
 	Request(ServerConfig conf);
@@ -83,6 +83,7 @@ public:
 
 // Setters
 	void setPathTarget(const std::string &path);
+	void setMethod(std::string method);
 
 // Exception
 	class InvalidRequest : public std::exception { const char* what() const throw(); };

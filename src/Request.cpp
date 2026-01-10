@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/09 14:27:40 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 03:54:54 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,17 +42,33 @@ Request::Request(const Request& obj)
 	_query = obj._query;
 }
 
-// Request& Request::operator=(const Request& obj)
-// {
-// 	if (this != &obj)
-// 	{
-// 		*this = obj;
-// 	}
-// 	return *this;	
-// }
+Request& Request::operator=(const Request &obj)
+{
+    if (this != &obj)
+    {
+        this->_method = obj._method;
+        this->_pathTarget = obj._pathTarget;
+        this->_query = obj._query;
+        this->_protocol = obj._protocol;
+        this->_root = obj._root;
+        this->_body = obj._body;
+
+        this->_queryContent = obj._queryContent;
+        this->_header = obj._header;
+        this->_bodyContent = obj._bodyContent;
+        this->_errorPage = obj._errorPage;
+
+        this->_firstLine = obj._firstLine;
+        this->_responseCode = obj._responseCode;
+
+        this->_conf = obj._conf;
+    }
+    return *this;
+}
 
 Request::~Request()
 {
+	
 }
 
 Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)

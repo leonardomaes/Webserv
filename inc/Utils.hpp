@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 19:11:47 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/12 19:11:49 by lmaes            ###   ########.fr       */
+/*   Updated: 2026/01/10 03:40:34 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,3 +15,4 @@
 #include "Header.hpp"
 
 void printMsg(std::string str);
+std::string getFormValue(const std::string &body, const std::string &key);

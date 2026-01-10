@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:09 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/09 00:02:33 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 03:38:31 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ private:
 	void sendFavicon(const Request& obj, int eventFD);
 	void respond(std::string header, std::string body, int eventFD);
 
-
 	std::map<int, std::string> _status;
 	std::string _root;
 	std::map<std::string, MethodHandler> _handler;
@@ -59,6 +58,7 @@ public:
 	~Response();
 // Functions
 	void generateResponse(const Request& obj, int epfd, int eventFD);
+	
 
 
 // Getters
@@ -74,3 +74,4 @@ public:
 			virtual const char* what() const throw();
 	};
 };
+
