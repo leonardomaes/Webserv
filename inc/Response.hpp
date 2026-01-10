@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:09 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/02 23:50:11 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/09 00:02:33 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,14 +26,16 @@ class Response
 private:
 	// Member Functions
 	typedef void (Response::*MethodHandler)(const Request&, int);
-// Member Functions
+	// Member Functions
 	void handleGET(const Request& obj, int eventFD);
 	void handlePOST(const Request& obj, int eventFD);
+	bool isDELETEAllowed(const Request& obj);
 	void handleDELETE(const Request& obj, int eventFD);
 	std::string defaultErrorPage(int error);
 	void handleERROR(const Request& obj, int error, int eventFD);
 	void sendFavicon(const Request& obj, int eventFD);
 	void respond(std::string header, std::string body, int eventFD);
+
 
 	std::map<int, std::string> _status;
 	std::string _root;

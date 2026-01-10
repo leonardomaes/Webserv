@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/03 00:06:10 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/09 00:34:13 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -298,17 +298,116 @@ void Response::handlePOST(const Request& obj, int eventFD)
 	respond(header, body, eventFD);
 }
 
+bool Response::isDELETEAllowed(const Request& obj)
+{
+	const ServerConfig *server = obj.getConfig();
+	if (!server)
+		return (false);
+
+	std::string path = obj.getPathTarget();
+
+	// finding marching locations (as implemented in AutoIndex)
+	const LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+
+	for (size_t i = 0; i < server->locations.size(); ++i)
+	{
+		const LocationConfig &loc = server->locations[i];
+		std::string locPath = loc.path;
+
+		if (path.find(locPath) == 0)
+		{
+			if (locPath.length() > longestMatch)
+			{
+				longestMatch = locPath.length();
+				bestMatch = &loc;
+			}
+		}
+	}
+
+	if (!bestMatch)			// if no location was found
+		return (false);
+
+	//Check if DELETE is a method allowed
+	for (size_t i = 0; i < bestMatch->allow_methods.size(); ++i)
+	{
+		if (bestMatch->allow_methods[i] == "DELETE")
+			return (true);
+	}
+
+	return (false);
+}
+
 void Response::handleDELETE(const Request& obj, int eventFD)
 {
+	// checking for request errors
 	if (obj.getCode() >= 400)
 	{
 		handleERROR(obj, obj.getCode(), eventFD);
-		return ;
+		return;
 	}
-	
-	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
-	std::string body = this->getContent("delete_success.html");
-	respond(header, body, eventFD);
+
+	// check if DELETE is an allowed method for this location
+	if (!isDELETEAllowed(obj))
+	{
+		printMsg("DELETE method is not allowed at this location");
+		handleERROR(obj, 405, eventFD);
+		return;
+	}
+
+	// build full path (root + target path)
+	std::string fullPath = this->getRoot() + obj.getPathTarget();
+	printMsg("Received DELETE request for: " + fullPath);
+
+	// avoid path traversal (security issue)
+	if (obj.getPathTarget().find("..") != std::string::npos)
+	{
+		printMsg("Path traversal attempt");
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+
+	// check if resource exists
+	struct stat pathStat;
+	if (stat(fullPath.c_str(), &pathStat) != 0)
+	{
+		// resource not found
+		printMsg("Resource not found: " + fullPath);
+		handleERROR(obj, 404, eventFD);
+		return;
+	}
+
+	// check if it is a directory (folders cannot be deleted)
+	if (S_ISDIR(pathStat.st_mode))
+	{
+		printMsg("Cannot delete a folder: " + fullPath);
+		handleERROR(obj, 403, eventFD);
+		return;		
+	}
+
+	// check file permissions (write)
+	if (access(fullPath.c_str(), W_OK) != 0)
+	{
+		printMsg("Permission denied for: " + fullPath);
+		handleERROR(obj, 403, eventFD);
+		return;
+	}
+
+	// delete file, if it fails return error
+	if (unlink(fullPath.c_str()) != 0)
+	{
+		printMsg("File delition failed for: " + fullPath);
+		handleERROR(obj, 500, eventFD);
+		return;
+	}
+
+	// print a log message for sucess
+	printMsg("File sucessfull deleted: " + fullPath);
+
+	// return a message with code 204 for client (just header, no body)
+	std::string header = "HTTP/1.1 204 No Content\r\n"
+						 "Connection: close\r\n\r\n";
+	send(eventFD, header.c_str(), header.size(), 0);
 }
 
 void Response::handleERROR(const Request& obj, int error, int eventFD)
