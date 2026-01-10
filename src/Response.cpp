@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 16:16:17 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 17:10:26 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -402,7 +402,6 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	struct stat pathStat;
 	if (stat(fullPath.c_str(), &pathStat) != 0)
 	{
-		// resource not found
 		printMsg("Resource not found: " + fullPath);
 		handleERROR(obj, 404, eventFD);
 		return;
@@ -435,10 +434,10 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 	// print a log message for sucess
 	printMsg("File sucessfull deleted: " + fullPath);
 
-	// return a message with code 204 for client (just header, no body)
-	std::string header = "HTTP/1.1 204 No Content\r\n"
-						 "Connection: close\r\n\r\n";
-	send(eventFD, header.c_str(), header.size(), 0);
+	// return a response (200 OK header and not 204 to allow the use of the delete.html)
+	std::string header = "HTTP/1.1 200 OK\r\n";
+	std::string body = getContent("/delete_success.html");  // this allow the redirection into delete_sucess.html
+	respond(header, body, eventFD);
 }
 
 void Response::handleERROR(const Request& obj, int error, int eventFD)
