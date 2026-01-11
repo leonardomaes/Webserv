@@ -34,6 +34,7 @@ private:
 	// Variables
 	bool		_firstLine;
 	int			_responseCode;
+	bool		_isChunked;
 	std::map<int, std::string> _errorPage;
 
 	// Objs
@@ -80,6 +81,7 @@ public:
 	const std::string getErrorPage(int error) const;
 	const ServerConfig *getConfig() const;	// RN: need to add this getter here to access the config info
 	bool isMultipart() const;
+	bool isChunked() const;
 
 // Setters
 	void setPathTarget(const std::string &path);

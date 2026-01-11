@@ -12,7 +12,7 @@
 
 #include "../inc/Request.hpp"
 
-Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
+Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200), _isChunked(false)
 {
 	// printMsg("Constructor 1");
 	_header["Host"] = "";
@@ -34,6 +34,7 @@ Request::Request(const Request& obj)
 	_method = obj._method;
 	_pathTarget = obj._pathTarget;
 	_protocol = obj._protocol;
+	_isChunked = obj._isChunked;
 	_firstLine = obj._firstLine;
 	_responseCode = obj._responseCode;
 	_errorPage = obj._errorPage;
@@ -58,6 +59,7 @@ Request& Request::operator=(const Request &obj)
         this->_bodyContent = obj._bodyContent;
         this->_errorPage = obj._errorPage;
 
+        this->_isChunked = obj._isChunked;
         this->_firstLine = obj._firstLine;
         this->_responseCode = obj._responseCode;
 
@@ -71,7 +73,7 @@ Request::~Request()
 	
 }
 
-Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200)
+Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1),  _responseCode(200), _isChunked(false)
 {
 	// printMsg("Constructor 3");
 	_header["Host"] = "";
@@ -332,6 +334,12 @@ void Request::parseHeader(std::string line)
 		value.erase(value.size() - 1);
 	if (_header[key] == "")
 		_header[key] = value;
+	if (key == "Transfer-Encoding" && value == "chunked")
+	{
+		_isChunked = true;
+		_responseCode = 411;
+	}
+	
 }
 
 int Request::validLocation(std::string filename)
@@ -559,7 +567,7 @@ void Request::parseRequest(std::string buffer)
 				break ;
 			continue;
 		}
-		if (line == "\r" || line.empty())
+		if (line == "\r" || line.empty() || _isChunked)
 			break;
 		parseHeader(line);
 	}
@@ -640,6 +648,10 @@ bool Request::isMultipart() const
 	return ct.find("multipart/form-data") != std::string::npos;
 }
 
+bool Request::isChunked() const
+{
+	return _isChunked;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// SETTER /////////////////////////////////////////

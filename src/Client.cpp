@@ -118,6 +118,9 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 	printMsg("(START)");
 	printMsg(buffer);
 	printMsg("(END)");
+	if (_request.isChunked())
+		std::cout << "LOG::" << RED << "Chunked encoding rejected\n" << RESET;	// LOG
+	
 	return true;
 }
 

@@ -321,9 +321,9 @@ void Response::handlePOST(const Request& obj, int eventFD)
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
 	std::string responseBody;
 	if (obj.isMultipart())
-		responseBody = getContent("upload_success.html");
+		responseBody = getContent("/upload_success.html");
 	else	
-		responseBody = getContent("post_success.html");
+		responseBody = getContent("/post_success.html");
 	// printMsg(header);
 	// printMsg(body);
 	respond(header, responseBody, eventFD);
