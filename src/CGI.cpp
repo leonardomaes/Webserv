@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/11 23:40:11 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/12 19:34:41 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,9 +66,21 @@ std::string CGI::execute(const Request& request)
     if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
         throw std::runtime_error("Pipe failed on CGI");
 
-    // now we have to fork the process
+    pid_t pid = fork();
+    if (pid == -1)
+        throw std::runtime_error("Fork failed on CGI");
 
-    
+    // child process
+    if (pid == 0)
+    {
+        close(pipe_in[1]);  // close pipe in write end as child does not write to stdin
+        close(pipe_out[0]); // close pipe out read end as child does not read from stdout
+
+        dup2(pipe_in[0], STDIN_FILENO);     // redirect stdin / stdout
+        dup2(pipe_out[1], STDOUT_FILENO);
+        
+    }
+   
     
     // TO DO
 }
