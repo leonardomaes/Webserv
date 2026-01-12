@@ -12,7 +12,7 @@
 
 #include "../inc/Webserv.hpp"
 
-Webserv::Webserv(Config* config) : _config(config)
+Webserv::Webserv(Config* config)
 {
     _epfd = epoll_create(1);
     if (_epfd < 0)

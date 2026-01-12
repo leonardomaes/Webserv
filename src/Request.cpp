@@ -104,6 +104,7 @@ int Request::fileOpen(std::string target)
 {
 	std::string filename = this->_conf.root;	// Config file
 	filename.append(target);
+	std::cout << filename << std::endl;
 	std::ifstream file(filename.c_str(), std::ios::in);
 	if (!file.is_open())
 		return 0;
@@ -435,6 +436,7 @@ int Request::parsePath()
 			return 404;
 		}
 	}
+		std::cout << _pathTarget << std::endl;
 	if (this->fileOpen(this->_pathTarget))		// Generic case (GET/POST)
 		return code;
 	else										// Error case

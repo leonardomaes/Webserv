@@ -23,7 +23,7 @@ private:
 	int							_epfd;
 	std::vector<Server*>		_servers;
 	std::map<int, Client>		_clients;
-	Config*						_config;
+	// Config*						_config;
 public:
 	Webserv(Config* config);
 	~Webserv();
