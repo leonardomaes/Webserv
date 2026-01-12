@@ -394,7 +394,7 @@ int Request::validLocation(std::string filename)
 			_root = _conf.root;
 	}
 	if (_pathTarget == "/")
-		_pathTarget = _conf.index;
+		_pathTarget = "/" + _conf.index;
 	if (!allowed)
 		return 405;  // 404
 	if (this->_method == "POST")
