@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:09 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 03:38:31 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/13 23:11:40 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,9 +31,9 @@ private:
 	void handleGET(const Request& obj, int eventFD);
 	void handlePOST(const Request& obj, int eventFD);
 	bool isDELETEAllowed(const Request& obj);
-	void handleDELETE(const Request& obj, int eventFD);
-	void handleCGI(const Request& obj, int eventFD);				// CGI feature 
-	const LocationConfig* getLocationConfig(const Request& obj);	// location matching (handler for CGI, isAutoIndexEnabled, etc.)
+	void handleDELETE(const Request& obj, int eventFD);		
+	void handleCGI(const Request &obj, const LocationConfig* loc, int eventFD);	// CGI feature
+	const LocationConfig *getLocationConfig(const Request& obj);	// location matching (handler for CGI, isAutoIndexEnabled, etc.)
 	std::string defaultErrorPage(int error);
 	void handleERROR(const Request& obj, int error, int eventFD);
 	void sendFavicon(const Request& obj, int eventFD);

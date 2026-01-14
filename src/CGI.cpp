@@ -6,11 +6,11 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/13 00:20:50 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/13 23:41:24 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "CGI.hpp"
+#include "../inc/CGI.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// CONSTRUCTORS /////////////////////////////////
@@ -41,7 +41,7 @@ void CGI::initializeEnv(const Request &request)
     // ADD MORE VARS HERE
 }
 
-char ** CGI::getEnvAsArray() const
+char** CGI::getEnvAsArray() const
 {
     char **env = new char*[_env.size() + 1];
     int i = 0;
@@ -52,7 +52,7 @@ char ** CGI::getEnvAsArray() const
         strcpy(env[i], element.c_str());
         i++;
     } 
-    env[i] == NULL;
+    env[i] = NULL;
     return (env);
 }
 

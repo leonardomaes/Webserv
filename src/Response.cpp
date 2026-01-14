@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 17:10:26 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/13 23:59:33 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -458,7 +458,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 }
 
 // search for a location that matches the one from the request
-const Response::LocationConfig *getLocationConfig(const Request& obj)
+const LocationConfig *Response::getLocationConfig(const Request& obj)
 {
 	// getting the specific server config 
 	const ServerConfig *server = obj.getConfig();
@@ -512,7 +512,8 @@ void Response::handleCGI(const Request& obj, const LocationConfig* loc, int even
 	try
 	{
 		std::string cgiOutput = cgi.execute(obj);
-		send(eventFD, cgiOutput.c_str(), cgiOutput.size(), 0); // check if the output already include the header and body
+		std::string response = "HTTP/1.1 200 OK\r\n" + cgiOutput;
+		send(eventFD, response.c_str(), response.size(), 0);		 // check if the output already include the header and body
 	}
 	catch (const std::exception &e)
 	{
@@ -529,15 +530,34 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	std::stringstream dbg_ss;
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
+
+	// CGI indentification and handling
+	// ******************************************************************
+
+	// get the location that mathes this request
+	const LocationConfig *loc = getLocationConfig(obj);
+
+	// check if this is a CGI request (location exists + CGI enabled + file extension)
+	std::string path = obj.getPathTarget();
+	std::string ext = "";
+	size_t dotPos = path.find_last_of(".");
+	if (dotPos != std::string::npos)
+		ext = path.substr(dotPos);
+	if (loc && loc->has_cgi && loc->cgi_ext == ext)
+	{
+		handleCGI(obj, loc, eventFD);
+		//clean up connection
+		{
+			epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
+			close(eventFD);
+		}
+		return;
+	}
+
+	// standard logic for GET, POST, DELETE
 	// ******************************************************************
 	try
 	{
-		// CGI indentification and handling
-
-		// TO DO 
-		// will call handleCGI(obj, loc, eventFD);
-
-		// standard handlers (non-CGI)
 		std::map<std::string, MethodHandler>::iterator it;
 		it = _handler.find(obj.getMethod());
 		if (it == _handler.end())
