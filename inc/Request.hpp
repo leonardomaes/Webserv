@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:25:57 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 03:53:14 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/13 00:18:14 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,11 +72,13 @@ public:
 // Getters
 	std::string getMethod() const;
 	std::string getPathTarget() const;
+	std::string getQuery() const;
 	std::string getProtocol() const;
 	std::string getRoot() const;
 	std::string getConnection() const;
 	std::string getBody() const;
 	int			getCode() const;
+	std::string getHeaderContent(std::string key) const;
 	std::string getBodyContent(std::string key) const;
 	const std::string getErrorPage(int error) const;
 	const ServerConfig *getConfig() const;	// RN: need to add this getter here to access the config info

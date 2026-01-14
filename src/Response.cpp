@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 17:10:26 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/13 23:59:33 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -331,38 +331,15 @@ void Response::handlePOST(const Request& obj, int eventFD)
 
 bool Response::isDELETEAllowed(const Request& obj)
 {
-	const ServerConfig *server = obj.getConfig();
-	if (!server)
+	const LocationConfig *loc = getLocationConfig(obj);
+
+	if (!loc)			// if no location was found
 		return (false);
 
-	std::string path = obj.getPathTarget();
-
-	// finding marching locations (as implemented in AutoIndex)
-	const LocationConfig* bestMatch = NULL;
-	size_t longestMatch = 0;
-
-	for (size_t i = 0; i < server->locations.size(); ++i)
+	//Check if DELETE is an allowed method
+	for (size_t i = 0; i < loc->allow_methods.size(); ++i)
 	{
-		const LocationConfig &loc = server->locations[i];
-		std::string locPath = loc.path;
-
-		if (path.find(locPath) == 0)
-		{
-			if (locPath.length() > longestMatch)
-			{
-				longestMatch = locPath.length();
-				bestMatch = &loc;
-			}
-		}
-	}
-
-	if (!bestMatch)			// if no location was found
-		return (false);
-
-	//Check if DELETE is a method allowed
-	for (size_t i = 0; i < bestMatch->allow_methods.size(); ++i)
-	{
-		if (bestMatch->allow_methods[i] == "DELETE")
+		if (loc->allow_methods[i] == "DELETE")
 			return (true);
 	}
 
@@ -480,6 +457,71 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 	send(eventFD, response.c_str(), response.size(), 0);
 }
 
+// search for a location that matches the one from the request
+const LocationConfig *Response::getLocationConfig(const Request& obj)
+{
+	// getting the specific server config 
+	const ServerConfig *server = obj.getConfig();
+	if (!server)
+		return NULL;
+	
+	// normalize the path (remove slash for comparing)
+	std::string path = obj.getPathTarget();
+	std::string normalizedPath = path;
+	if (normalizedPath.length() > 1 && normalizedPath[normalizedPath.length() - 1] == '/')
+		normalizedPath = normalizedPath.substr(0, normalizedPath.length() - 1);
+
+	// finding the correct location on the server
+	const LocationConfig* bestMatch = NULL;
+	size_t longestMatch = 0;
+	
+	for (size_t i = 0; i < server->locations.size(); ++i)
+	{
+		const LocationConfig &loc = server->locations[i];
+		std::string locPath = loc.path;
+
+		// normalize location path
+		if (locPath.length() > 1 && locPath[locPath.length() - 1] == '/')
+			locPath = locPath.substr(0, locPath.length() - 1);
+
+		// check if request path starts with location path
+		// checking the exact match and then the prefix match followed by '/'
+		if (normalizedPath.find(locPath) == 0 && normalizedPath[locPath.length()] == '/')
+		{
+			if (locPath.length() > longestMatch)
+			{
+				longestMatch = locPath.length();
+				bestMatch = &loc;
+			}
+		}
+	}
+	return bestMatch;
+}
+
+// execute CGI if detected in the request
+void Response::handleCGI(const Request& obj, const LocationConfig* loc, int eventFD)
+{
+	printMsg("Executing CGI script");
+
+	// building the absolute path for the script
+	std::string scriptPath = this->getRoot() + obj.getPathTarget();
+
+	// create the CGI object
+	CGI cgi(scriptPath, loc->cgi_path); // this is the cgi interpreter like /usr/bin/python3
+
+	try
+	{
+		std::string cgiOutput = cgi.execute(obj);
+		std::string response = "HTTP/1.1 200 OK\r\n" + cgiOutput;
+		send(eventFD, response.c_str(), response.size(), 0);		 // check if the output already include the header and body
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "CGI Error: " << e.what() << std::endl;
+		handleERROR(obj, 500, eventFD);
+	}
+}
+
 // Response starts here
 void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 {
@@ -488,6 +530,31 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	std::stringstream dbg_ss;
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
+
+	// CGI indentification and handling
+	// ******************************************************************
+
+	// get the location that mathes this request
+	const LocationConfig *loc = getLocationConfig(obj);
+
+	// check if this is a CGI request (location exists + CGI enabled + file extension)
+	std::string path = obj.getPathTarget();
+	std::string ext = "";
+	size_t dotPos = path.find_last_of(".");
+	if (dotPos != std::string::npos)
+		ext = path.substr(dotPos);
+	if (loc && loc->has_cgi && loc->cgi_ext == ext)
+	{
+		handleCGI(obj, loc, eventFD);
+		//clean up connection
+		{
+			epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
+			close(eventFD);
+		}
+		return;
+	}
+
+	// standard logic for GET, POST, DELETE
 	// ******************************************************************
 	try
 	{
@@ -526,63 +593,14 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 
 bool Response::isAutoIndexEnabled(const Request &obj)
 {
-	// identifying the request path
-	std::string path = obj.getPathTarget();
+	// grab the similar location config
+	const LocationConfig *loc = getLocationConfig(obj); 
 
-	// getting the specific server config 
-	const ServerConfig *server = obj.getConfig();
-	if (!server)
-		return (false);
-	
-	// normalize the path (remove slash for comparing)
-	std::string normalizedPath = path;
-	if (normalizedPath.length() > 1 && normalizedPath[normalizedPath.length() - 1] == '/')
-		normalizedPath = normalizedPath.substr(0, normalizedPath.length() - 1);
+	// if we found a matching location, return the auto_index value
+	if (loc)
+		return (loc->auto_index); 
 
-	// finding the correct location on the server
-	const LocationConfig* bestMatch = NULL;
-	size_t longestMatch = 0;
-	
-	for (size_t i = 0; i < server->locations.size(); ++i)
-	{
-		const LocationConfig &loc = server->locations[i];
-
-		// normalize location path
-		std::string locPath = loc.path;
-		if (locPath.length() > 1 && locPath[locPath.length() - 1] == '/')
-			locPath = locPath.substr(0, locPath.length() - 1);
-
-		// check if request path starts with location path
-		// checking first the exact match and then the prefix match followed by '/'
-		if (normalizedPath == locPath)
-		{
-			// exact match
-			if (locPath.length() > longestMatch)
-			{
-				longestMatch = locPath.length();
-				bestMatch = &loc;
-			}
-		}
-		else if (normalizedPath.find(locPath) == 0)
-		{
-			// prefix match served after
-			if (normalizedPath.length() > locPath.length() && 
-			    normalizedPath[locPath.length()] == '/')
-			{
-				if (locPath.length() > longestMatch)
-				{
-					longestMatch = locPath.length();
-					bestMatch = &loc;
-				}
-			}
-		}
-	}
-
-	// if we found a matching location, we return its auto_index falue (1 or 0)
-	if (bestMatch)
-		return (bestMatch->auto_index); // returns 1 if auto_index is 'on'
-
-	// as a default
+	// as a default auto_index is disabled
 	return (false);
 }
 

@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 15:54:36 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/13 00:25:15 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,8 +98,6 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	_query = "";
 }
 
-
-
 int Request::fileOpen(std::string target)
 {
 	std::string filename = this->_conf.root;	// Config file
@@ -115,7 +113,6 @@ int Request::fileOpen(std::string target)
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// POST TEXT ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-
 
 size_t Request::getContentLength() const
 {
@@ -595,6 +592,11 @@ std::string Request::getPathTarget() const
 	return _pathTarget;
 }
 
+std::string Request::getQuery() const
+{
+	return _query;
+}
+
 std::string Request::getProtocol() const
 {
 	return _protocol;
@@ -613,6 +615,16 @@ std::string Request::getRoot() const
 std::string Request::getConnection() const
 {
 	return _header.at("Connection");
+}
+
+std::string Request::getHeaderContent(std::string key) const
+{
+	std::map<std::string, std::string>::const_iterator it;
+
+	it = _header.find(key);
+	if (it != _header.end())
+		return it->second;
+	return "";
 }
 
 std::string Request::getBodyContent(std::string key) const
