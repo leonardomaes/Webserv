@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/13 23:41:24 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/14 00:59:58 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ void CGI::initializeEnv(const Request &request)
     _env["SCRIPT_FILENAME"] = _scriptPath;
     _env["PATH_INFO"] = request.getPathTarget();
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    _env["REDIRECT_STATUS"] = "200";
     // ADD MORE VARS HERE
 }
 
