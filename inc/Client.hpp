@@ -30,6 +30,8 @@ private:
 	
 	// Functions
 	size_t extractContentLength(const std::string& buffer);
+	bool isChunkedRequest(const std::string& buffer);
+	bool decodeChunkedBody(const std::string& buffer, size_t body_start, std::string& out_body, size_t& consumed);
 public:
 	Client();
 	Client(const Client& obj);

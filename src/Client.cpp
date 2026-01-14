@@ -47,6 +47,11 @@ Client::Client(int fd, ServerConfig conf) : _ClientFD(fd), _request(conf), _resp
 		throw ClientException("Non-Blocking failed");
 }
 
+bool Client::isChunkedRequest(const std::string& buffer)
+{
+	return buffer.find("Transfer-Encoding: chunked") != std::string::npos;
+}
+
 void Client::closeConnection(int epfd)
 {
 	if (_ClientFD <= 0)		// If already closed
@@ -76,11 +81,43 @@ size_t Client::extractContentLength(const std::string& buffer)
 	return std::strtoul(buffer.c_str() + pos, NULL, 10);
 }
 
+bool Client::decodeChunkedBody(const std::string& buffer, size_t body_start, std::string& out_body, size_t& consumed)
+{
+	size_t pos = body_start;
+	out_body.clear();
+
+	while (true)
+	{
+		size_t line_end = buffer.find("\r\n", pos);
+		if (line_end == std::string::npos)
+			return false;
+
+		std::string size_str = buffer.substr(pos, line_end - pos);
+		size_t chunk_size = strtoul(size_str.c_str(), NULL, 16);
+
+		pos = line_end + 2;
+
+		if (chunk_size == 0)
+		{
+			// precisa de \r\n final
+			if (buffer.size() < pos + 2)
+				return false;
+
+			consumed = pos + 2; // 0\r\n\r\n
+			return true;
+		}
+
+		if (buffer.size() < pos + chunk_size + 2)
+			return false;
+
+		out_body.append(buffer, pos, chunk_size);
+		pos += chunk_size + 2; // chunk + \r\n
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
@@ -105,21 +142,48 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 	size_t header_end = _recvBuffer.find("\r\n\r\n");
 	if (header_end == std::string::npos)
 		return false;
+
+	size_t body_start = header_end + 4;
+	// Chunked content
+	if (isChunkedRequest(_recvBuffer))
+	{
+		std::string decodedBody;
+		size_t consumed = 0;
+
+		if (!decodeChunkedBody(_recvBuffer, body_start, decodedBody, consumed))
+			return false;
+
+		std::string full_request = _recvBuffer.substr(0, body_start) + decodedBody;
+
+		_request = Request(conf);
+		_request.parseRequest(full_request);
+
+		_recvBuffer.clear();
+		std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl
+						<< "< Received Request (" << this->_request.getMethod() << " - "
+						<< this->_request.getPathTarget() << ")" << RESET << std::endl;
+		printMsg("(START)");
+		// printMsg(full_request);
+		printMsg("(END)");
+		return true;
+	}
+	
+	// Normal content
 	size_t content_length = extractContentLength(_recvBuffer);
-	size_t total_size = header_end + 4 + content_length;
+	size_t total_size = body_start + content_length;
 	if (_recvBuffer.size() < total_size)
 		return false;	// Incomplete body
 	this->_request = Request(conf);
 	this->_request.parseRequest(_recvBuffer);
-	_recvBuffer.clear();
 	std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl
 					<< "< Received Request (" << this->_request.getMethod() << " - "
 					<< this->_request.getPathTarget() << ")" << RESET << std::endl;
 	printMsg("(START)");
-	printMsg(buffer);
+	// printMsg(_recvBuffer);
 	printMsg("(END)");
-	if (_request.isChunked())
-		std::cout << "LOG::" << RED << "Chunked encoding rejected\n" << RESET;	// LOG
+	_recvBuffer.clear();
+	// if (_request.isChunked())
+	// 	std::cout << "LOG::" << RED << "Chunked encoding rejected\n" << RESET;	// LOG
 	
 	return true;
 }

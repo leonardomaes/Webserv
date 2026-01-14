@@ -35,6 +35,7 @@ private:
 	bool		_firstLine;
 	int			_responseCode;
 	bool		_isChunked;
+	bool		_isImage;
 	std::map<int, std::string> _errorPage;
 
 	// Objs
@@ -58,6 +59,7 @@ private:
 	std::string extractFilename(const std::string& headers);
 	std::string sanitizeFilename(const std::string& filename);
 	bool		writeBinaryFile(const std::string& path, const std::string& data);
+	void		postBinaryImage();
 public:
 	Request();
 	Request(const Request& obj);
@@ -84,6 +86,7 @@ public:
 	const ServerConfig *getConfig() const;	// RN: need to add this getter here to access the config info
 	bool isMultipart() const;
 	bool isChunked() const;
+	bool isImage() const;
 
 // Setters
 	void setPathTarget(const std::string &path);

@@ -6,13 +6,13 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/13 00:25:15 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/10 15:54:36 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/Request.hpp"
 
-Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200), _isChunked(false)
+Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200), _isChunked(false), _isImage(false)
 {
 	// printMsg("Constructor 1");
 	_header["Host"] = "";
@@ -35,6 +35,7 @@ Request::Request(const Request& obj)
 	_pathTarget = obj._pathTarget;
 	_protocol = obj._protocol;
 	_isChunked = obj._isChunked;
+	_isImage = obj._isImage;
 	_firstLine = obj._firstLine;
 	_responseCode = obj._responseCode;
 	_errorPage = obj._errorPage;
@@ -45,27 +46,28 @@ Request::Request(const Request& obj)
 
 Request& Request::operator=(const Request &obj)
 {
-    if (this != &obj)
-    {
-        this->_method = obj._method;
-        this->_pathTarget = obj._pathTarget;
-        this->_query = obj._query;
-        this->_protocol = obj._protocol;
-        this->_root = obj._root;
-        this->_body = obj._body;
+	if (this != &obj)
+	{
+		this->_method = obj._method;
+		this->_pathTarget = obj._pathTarget;
+		this->_query = obj._query;
+		this->_protocol = obj._protocol;
+		this->_root = obj._root;
+		this->_body = obj._body;
 
-        this->_queryContent = obj._queryContent;
-        this->_header = obj._header;
-        this->_bodyContent = obj._bodyContent;
-        this->_errorPage = obj._errorPage;
+		this->_queryContent = obj._queryContent;
+		this->_header = obj._header;
+		this->_bodyContent = obj._bodyContent;
+		this->_errorPage = obj._errorPage;
 
-        this->_isChunked = obj._isChunked;
-        this->_firstLine = obj._firstLine;
-        this->_responseCode = obj._responseCode;
+		this->_isChunked = obj._isChunked;
+		this->_isImage = obj._isImage;
+		this->_firstLine = obj._firstLine;
+		this->_responseCode = obj._responseCode;
 
-        this->_conf = obj._conf;
-    }
-    return *this;
+		this->_conf = obj._conf;
+	}
+	return *this;
 }
 
 Request::~Request()
@@ -73,7 +75,7 @@ Request::~Request()
 	
 }
 
-Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1),  _responseCode(200), _isChunked(false)
+Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1),  _responseCode(200), _isChunked(false), _isImage(false)
 {
 	// printMsg("Constructor 3");
 	_header["Host"] = "";
@@ -98,11 +100,13 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	_query = "";
 }
 
+
+
 int Request::fileOpen(std::string target)
 {
 	std::string filename = this->_conf.root;	// Config file
 	filename.append(target);
-	std::cout << filename << std::endl;
+	std::cout << "fileOpen::(root + filename)" << filename << std::endl;		// DELETE
 	std::ifstream file(filename.c_str(), std::ios::in);
 	if (!file.is_open())
 		return 0;
@@ -113,6 +117,7 @@ int Request::fileOpen(std::string target)
 //////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// POST TEXT ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
+
 
 size_t Request::getContentLength() const
 {
@@ -261,7 +266,7 @@ void Request::parseMultipartImage()
 	}
 	std::string part_headers = _body.substr(pos, headers_end - pos);
 	std::string filename = extractFilename(part_headers);
-	if (filename.empty())
+	if (filename.empty() || filename.find(".." ) != std::string::npos)
 	{
 		_responseCode = 400;
 		return ;
@@ -288,6 +293,32 @@ void Request::parseMultipartImage()
 	_responseCode = 201;
 }
 
+void Request::postBinaryImage()
+{
+	std::cout << _body << std::endl;
+	const std::string& body = getBody();
+	if (body.empty())
+	{
+		_responseCode = 400;
+		return ;
+	}
+	std::string target = _pathTarget;
+	if (!target.empty() && target[0] == '/')
+		target.erase(0, 1);
+	if (target.find("..") != std::string::npos)
+	{
+		_responseCode = 400;
+		return ;
+	}
+	std::string upload_path = _root + _pathTarget;
+	std::cout << "upload: " << upload_path << std::endl;
+	if (!writeBinaryFile(upload_path, body))
+	{
+		_responseCode = 500;
+		return;
+	}
+	_responseCode = 201;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// PARSING /////////////////////////////////////////
@@ -335,7 +366,11 @@ void Request::parseHeader(std::string line)
 	if (key == "Transfer-Encoding" && value == "chunked")
 	{
 		_isChunked = true;
-		_responseCode = 411;
+		// _responseCode = 411;
+	}
+	if (key == "Content-Type" && (value == "image/png" || value == "image/jpeg" || value == "application/octet-stream"))
+	{
+		_isImage = true;
 	}
 	
 }
@@ -434,7 +469,7 @@ int Request::parsePath()
 		}
 	}
 		std::cout << _pathTarget << std::endl;
-	if (this->fileOpen(this->_pathTarget))		// Generic case (GET/POST)
+	if (this->fileOpen(this->_pathTarget) || _method != "GET")		// Generic case (GET/POST)
 		return code;
 	else										// Error case
 	{
@@ -467,7 +502,7 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 		return;
 
 	size_t content_length = getContentLength();
-	if (content_length == 0)
+	if (content_length == 0 && _isChunked == false)
 		return;
 
 	if (body_start + content_length > buffer.size())
@@ -480,7 +515,7 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 		_responseCode = 413;
 		return ;
 	}
-	_body = buffer.substr(body_start, content_length);
+	_body = buffer.substr(body_start);	// Removed content length
 	std::string content_type = _header["Content-Type"];
 
 	if (content_type.find("multipart/form-data") != std::string::npos)
@@ -516,6 +551,8 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 		file << content;
 		file.close();
 	}
+	else if (_isImage)
+		postBinaryImage();
 	else
 		_responseCode = 415;
 }
@@ -566,9 +603,10 @@ void Request::parseRequest(std::string buffer)
 				break ;
 			continue;
 		}
-		if (line == "\r" || line.empty() || _isChunked)
+		if (line == "\r" || line.empty())
 			break;
 		parseHeader(line);
+		printMsg("->" + line);
 	}
 	if (_responseCode < 400)
 		_responseCode = parseConfig();
@@ -619,12 +657,12 @@ std::string Request::getConnection() const
 
 std::string Request::getHeaderContent(std::string key) const
 {
-	std::map<std::string, std::string>::const_iterator it;
+	   std::map<std::string, std::string>::const_iterator it;
 
-	it = _header.find(key);
-	if (it != _header.end())
-		return it->second;
-	return "";
+	   it = _header.find(key);
+	   if (it != _header.end())
+			   return it->second;
+	   return "";
 }
 
 std::string Request::getBodyContent(std::string key) const
@@ -665,6 +703,12 @@ bool Request::isMultipart() const
 bool Request::isChunked() const
 {
 	return _isChunked;
+}
+
+
+bool Request::isImage() const
+{
+	return _isImage;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
