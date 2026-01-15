@@ -106,7 +106,6 @@ int Request::fileOpen(std::string target)
 {
 	std::string filename = this->_conf.root;	// Config file
 	filename.append(target);
-	std::cout << "fileOpen::(root + filename)" << filename << std::endl;		// DELETE
 	std::ifstream file(filename.c_str(), std::ios::in);
 	if (!file.is_open())
 		return 0;
@@ -295,7 +294,6 @@ void Request::parseMultipartImage()
 
 void Request::postBinaryImage()
 {
-	std::cout << _body << std::endl;
 	const std::string& body = getBody();
 	if (body.empty())
 	{
@@ -311,7 +309,7 @@ void Request::postBinaryImage()
 		return ;
 	}
 	std::string upload_path = _root + _pathTarget;
-	std::cout << "upload: " << upload_path << std::endl;
+	printMsg("upload: " + upload_path);
 	if (!writeBinaryFile(upload_path, body))
 	{
 		_responseCode = 500;
@@ -424,6 +422,7 @@ int Request::validLocation(std::string filename)
 			_root = _conf.locations[it_l].root;
 		else
 			_root = _conf.root;
+		// Redir starts here
 	}
 	if (_pathTarget == "/")
 		_pathTarget = "/" + _conf.index;
@@ -468,7 +467,6 @@ int Request::parsePath()
 			return 404;
 		}
 	}
-		std::cout << _pathTarget << std::endl;
 	if (this->fileOpen(this->_pathTarget) || _method != "GET")		// Generic case (GET/POST)
 		return code;
 	else										// Error case
@@ -487,7 +485,6 @@ int Request::parseConfig()
 	// If _pathTarget is invalid (Parsing target path), then invalid page
 	if (code < 400)
 		code = this->parsePath();
-	// std::cout << _pathTarget << std::endl;
 	return code;
 }
 
@@ -606,12 +603,13 @@ void Request::parseRequest(std::string buffer)
 		if (line == "\r" || line.empty())
 			break;
 		parseHeader(line);
-		printMsg("->" + line);	// DEBUG
+		// printMsg("->" + line);	// DEBUG
 	}
 	if (_responseCode < 400)
 		_responseCode = parseConfig();
 	if (_responseCode < 400 && _method == "POST")
 		parseBody(buffer, header_end);
+	
 	printMsg("Root:" + this->_root);
 	printMsg("Target:" + this->_pathTarget);
 }

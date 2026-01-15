@@ -152,6 +152,7 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 
 		if (!decodeChunkedBody(_recvBuffer, body_start, decodedBody, consumed))
 			return false;
+		printMsg(_recvBuffer);
 
 		std::string full_request = _recvBuffer.substr(0, body_start) + decodedBody;
 
@@ -163,7 +164,7 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 						<< "< Received Request (" << this->_request.getMethod() << " - "
 						<< this->_request.getPathTarget() << ")" << RESET << std::endl;
 		printMsg("(START)");
-		// printMsg(full_request);
+		printMsg(full_request);
 		printMsg("(END)");
 		return true;
 	}
@@ -179,7 +180,7 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 					<< "< Received Request (" << this->_request.getMethod() << " - "
 					<< this->_request.getPathTarget() << ")" << RESET << std::endl;
 	printMsg("(START)");
-	// printMsg(_recvBuffer);
+	printMsg(_recvBuffer);
 	printMsg("(END)");
 	_recvBuffer.clear();
 	// if (_request.isChunked())

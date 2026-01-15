@@ -377,12 +377,12 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// check if resource exists
 	struct stat pathStat;
-	if (stat(fullPath.c_str(), &pathStat) != 0)
-	{
-		printMsg("Resource not found: " + fullPath);
-		handleERROR(obj, 404, eventFD);
-		return;
-	}
+	// if (stat(fullPath.c_str(), &pathStat) != 0)
+	// {
+	// 	printMsg("Resource not found: " + fullPath);
+	// 	handleERROR(obj, 404, eventFD);
+	// 	return;
+	// }
 
 	// check if it is a directory (folders cannot be deleted)
 	if (S_ISDIR(pathStat.st_mode))
@@ -581,10 +581,10 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	}
 	if (obj.getCode() >= 400)
 		std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
-					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
+					<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
 	else
 		std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
-					<< this->_status[obj.getCode()] << ")" << RESET << std::endl;		// LOG
+					<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
