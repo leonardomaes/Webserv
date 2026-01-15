@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/14 00:59:58 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/14 23:54:31 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,14 +31,15 @@ CGI::~CGI() {}
 void CGI::initializeEnv(const Request &request)
 {
     _env["REQUEST_METHOD"] = request.getMethod();
-    _env["QUERY_STRING"] = request.getQuery();                              // Does not exits in request class
-    _env["CONTENT_LENGTH"] = request.getHeaderContent("Content-Length");    // Does not exits in request class
-    _env["CONTENT_TYPE"] = request.getHeaderContent("Content-Type");        // Does not exits in request class
+    _env["QUERY_STRING"] = request.getQuery();                              
+    _env["CONTENT_LENGTH"] = request.getHeaderContent("Content-Length");    
+    _env["CONTENT_TYPE"] = request.getHeaderContent("Content-Type");        
     _env["SCRIPT_NAME"] = _scriptPath;
     _env["SCRIPT_FILENAME"] = _scriptPath;
     _env["PATH_INFO"] = request.getPathTarget();
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
     _env["REDIRECT_STATUS"] = "200";
+    _env["HTTP_COOKIE"] = request.getHeaderContent("Cookie");
     // ADD MORE VARS HERE
 }
 
