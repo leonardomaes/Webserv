@@ -106,6 +106,8 @@ void Webserv::run()
 			}
 		}
 	}
+	std::cout << "\nShutting down gracefully\n" << std::endl;
+	close(_epfd); // Needed?
 }
 
 Webserv::~Webserv()

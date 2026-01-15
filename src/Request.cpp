@@ -606,7 +606,7 @@ void Request::parseRequest(std::string buffer)
 		if (line == "\r" || line.empty())
 			break;
 		parseHeader(line);
-		printMsg("->" + line);
+		printMsg("->" + line);	// DEBUG
 	}
 	if (_responseCode < 400)
 		_responseCode = parseConfig();
