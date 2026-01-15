@@ -555,7 +555,6 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	}
 
 	// standard logic for GET, POST, DELETE
-	// ******************************************************************
 	try
 	{
 		std::map<std::string, MethodHandler>::iterator it;
@@ -570,7 +569,6 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 		handleERROR(obj, 405, eventFD);
 		std::cerr << e.what() << '\n';
 	}
-	// *******************************************************************
 	if (obj.getConnection() != "keep-alive")
 	{
 		// Delete event from epoll
