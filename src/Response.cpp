@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/13 23:59:33 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/16 00:46:35 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -321,9 +321,9 @@ void Response::handlePOST(const Request& obj, int eventFD)
 	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
 	std::string responseBody;
 	if (obj.isMultipart())
-		responseBody = getContent("/upload_success.html");
+		responseBody = getContent("/html/upload_success.html");
 	else	
-		responseBody = getContent("/post_success.html");
+		responseBody = getContent("/html/post_success.html");
 	// printMsg(header);
 	// printMsg(body);
 	respond(header, responseBody, eventFD);
@@ -413,7 +413,7 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// return a response (200 OK header and not 204 to allow the use of the delete.html)
 	std::string header = "HTTP/1.1 200 OK\r\n";
-	std::string body = getContent("/delete_success.html");  // this allow the redirection into delete_sucess.html
+	std::string body = getContent("/html/delete_success.html");  // this allow the redirection into delete_sucess.html
 	respond(header, body, eventFD);
 }
 
