@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2025/10/27 17:08:51 by lmaes            ###   ########.fr       */
+/*   Updated: 2026/01/16 01:15:32 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,6 @@
 #define MAX_CONNECTIONS 16
 #define BUFFER_SIZE 4096
 #define PORT 8080
-#define DBG_MSG 0
+#define DBG_MSG 1
 #define DBG_COLOR CYAN
 

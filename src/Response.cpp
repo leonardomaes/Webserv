@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/16 00:46:35 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/16 01:23:20 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -248,6 +248,7 @@ void Response::handleGET(const Request& obj, int eventFD)
 		indexPath += "index.html";
 		
 		struct stat indexStat;
+		printMsg("DEBUG: Checking directory stat for: " + fullPath);
 		if (stat(indexPath.c_str(), &indexStat) == 0 && S_ISREG(indexStat.st_mode))
 		{
 			// index file exists -> update the path and send it
@@ -486,7 +487,7 @@ const LocationConfig *Response::getLocationConfig(const Request& obj)
 
 		// check if request path starts with location path
 		// checking the exact match and then the prefix match followed by '/'
-		if (normalizedPath.find(locPath) == 0 && normalizedPath[locPath.length()] == '/')
+		if (normalizedPath == locPath || (normalizedPath.find(locPath) == 0 && normalizedPath[locPath.length()] == '/'))
 		{
 			if (locPath.length() > longestMatch)
 			{
