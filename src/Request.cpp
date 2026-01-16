@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/10 15:54:36 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/16 02:08:45 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -577,7 +577,6 @@ void Request::parseTarget(const std::string& target)
 			std::string key = decodeUrl(_query.substr(0, eq));
 			std::string val = decodeUrl(_query.substr(eq + 1));
 			_queryContent[key] = val;
-			_pathTarget += '/' + _queryContent[key];
 		}
 	}
 }
