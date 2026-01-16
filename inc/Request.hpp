@@ -47,7 +47,6 @@ private:
 	int			validLocation(std::string filename);
 	int			fileOpen(std::string filename);
 	void		parseHeader(std::string line);
-	int			parseConfig();
 	size_t 		getContentLength() const;
 	void		parseBody(std::string &buffer, size_t header_end);
 	std::string	decodeUrl(const std::string &str) const;
