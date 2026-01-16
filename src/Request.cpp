@@ -422,7 +422,12 @@ int Request::validLocation(std::string filename)
 			_root = _conf.locations[it_l].root;
 		else
 			_root = _conf.root;
-		// Redir starts here
+		printMsg("Redir: " + _conf.locations[it_l].redirect);
+		if (_conf.locations[it_l].redirect != "")
+		{
+			_pathTarget = "/" + _conf.locations[it_l].redirect;
+			printMsg("Redirect:" + _pathTarget);
+		}
 	}
 	if (_pathTarget == "/")
 		_pathTarget = "/" + _conf.index;
@@ -474,17 +479,6 @@ int Request::parsePath()
 		this->_pathTarget = "/error/404.html";
 		return 404;
 	}
-	return code;
-}
-
-int Request::parseConfig()
-{
-	int code = 200;
-	if (this->_method == "POST")
-		code = 201;
-	// If _pathTarget is invalid (Parsing target path), then invalid page
-	if (code < 400)
-		code = this->parsePath();
 	return code;
 }
 
@@ -605,7 +599,7 @@ void Request::parseRequest(std::string buffer)
 		// printMsg("->" + line);	// DEBUG
 	}
 	if (_responseCode < 400)
-		_responseCode = parseConfig();
+		_responseCode = parsePath();
 	if (_responseCode < 400 && _method == "POST")
 		parseBody(buffer, header_end);
 	

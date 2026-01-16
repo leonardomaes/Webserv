@@ -478,7 +478,7 @@ LocationConfig Config::parseLocationBlock(const std::string &firstLocationPath)
     if (it != locParams.end())  //if key is found place it in the LocationConfig struct
         loc.root = it ->second;
     
-    it = locParams.find("return");
+    it = locParams.find("redirect");
     if (it != locParams.end())
         loc.redirect = it->second;
     
