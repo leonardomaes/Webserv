@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:22:39 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/13 23:39:27 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/15 23:58:21 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,13 +20,15 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <signal.h>
 
 class CGI
 {
     private:
         std::map<std::string, std::string> _env;    // some people use a struct to store the variables instead of a maps
         std::string _scriptPath;                    // something in the cgi-bin dir
-        std::string _interepreterPath;              // for example /usr/bin/python3 for python
+        std::string _interpreterPath;              // for example /usr/bin/python3 for python
 
         char** getEnvAsArray() const;              // converts the map of env vars into an array so that ir can be used in execve
 

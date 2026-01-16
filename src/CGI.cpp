@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/14 23:54:31 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/16 00:23:29 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,10 @@
 
 CGI::CGI(const std::string &scriptPath, const std::string &interpreterPath) :
     _scriptPath(scriptPath),
-    _interepreterPath(interpreterPath)
+    _interpreterPath(interpreterPath)
 { }
 
 CGI::~CGI() {}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// FUNCTIONS //////////////////////////////////
@@ -40,6 +39,12 @@ void CGI::initializeEnv(const Request &request)
     _env["SERVER_PROTOCOL"] = "HTTP/1.1";
     _env["REDIRECT_STATUS"] = "200";
     _env["HTTP_COOKIE"] = request.getHeaderContent("Cookie");
+    _env["GATEWAY_INTERFACE"] = "CGI/1.1";
+    _env["SERVER_SOFTWARE"] = "Webserv/1.0";
+    _env["REMOTE_ADDR"] = "127.0.0.1"; 
+    _env["SERVER_NAME"] = request.getHeaderContent("Host");
+    _env["SERVER_PORT"] = request.getConfig()->listen;
+    
     // ADD MORE VARS HERE
 }
 
@@ -81,10 +86,13 @@ std::string CGI::execute(const Request& request)
         dup2(pipe_in[0], STDIN_FILENO);     // redirect stdin
         dup2(pipe_out[1], STDOUT_FILENO);   // redirect stdout
 
+        close(pipe_in[0]);      // safe practice
+        close(pipe_out[1]);     // safe practice
+
         // preparing execve args and running it
         char *args[] = 
         {
-            const_cast<char *>(_interepreterPath.c_str()),
+            const_cast<char *>(_interpreterPath.c_str()),
             const_cast<char *>(_scriptPath.c_str()),
             NULL
         };
@@ -101,6 +109,33 @@ std::string CGI::execute(const Request& request)
         if (request.getMethod() == "POST")
             write(pipe_in[1], request.getBody().c_str(), request.getBody().size());
         close(pipe_in[1]);
+
+        // setup select for timeout
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(pipe_out[0], &read_fds);
+        
+        struct timeval timeout;
+        timeout.tv_sec = 5;  // 5 seconds timeout
+        timeout.tv_usec = 0;
+
+        // wait until data available or timeout
+        int ret = select(pipe_out[0] + 1, &read_fds, NULL, NULL, &timeout);
+
+        if (ret == -1) 
+        {
+            kill(pid, SIGKILL);
+            waitpid(pid, NULL, 0);
+            close(pipe_out[0]);
+            throw std::runtime_error("Select failed");
+        }
+        else if (ret == 0)           // TIMEOUT REACHED!
+        {
+            kill(pid, SIGKILL);      // kill the script
+            waitpid(pid, NULL, 0);   // cleanup zombie process
+            close(pipe_out[0]);
+            throw std::runtime_error("CGI Timeout");
+        }
 
         // read output
         char buffer[4096];
