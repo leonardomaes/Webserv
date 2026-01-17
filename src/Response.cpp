@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/16 01:23:20 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/17 21:59:15 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -230,6 +230,14 @@ void Response::handleGET(const Request& obj, int eventFD)
 		sendFavicon(obj, eventFD);
 		return ;
 	}
+	if (obj.getCode() == 301)
+		{
+			std::string header = "HTTP/1.1 301 Moved Permanently\r\n";
+			header += "Location: " + obj.getPathTarget() + "\r\n";
+			header += "Content-Length: 0\r\n\r\n";
+			send(eventFD, header.c_str(), header.size(), 0);
+			return;
+		}
 
 	// DIRECTORY LISTING
 	std::string fullPath = this->getRoot() + obj.getPathTarget();
@@ -531,13 +539,35 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	std::stringstream dbg_ss;
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
-
-	// CGI indentification and handling
-	// ******************************************************************
-
+	
 	// get the location that mathes this request
 	const LocationConfig *loc = getLocationConfig(obj);
 
+	// redirection logic
+	if (loc && !loc->redirect.empty())
+	{
+		printMsg("Ridirecting to: " + loc->redirect);
+
+		// build the header with Location
+		std::string header = "HTTP/1.1 301 Moved Permanently\r\n";
+        header += "Location: " + loc->redirect + "\r\n";
+        header += "Content-Length: 0\r\n";
+        header += "Connection: close\r\n\r\n";
+
+		// send response
+		send(eventFD, header.c_str(), header.size(), 0);
+
+		// clean up connectio (like in CGI)
+		epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
+		close(eventFD);
+
+		// log and return
+		std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl 
+                  << "> Sent Redirect (301 - " << loc->redirect << ")" << RESET << std::endl << std::endl;
+		return; 
+	}
+
+	// CGI indentification and handling
 	// check if this is a CGI request (location exists + CGI enabled + file extension)
 	std::string path = obj.getPathTarget();
 	std::string ext = "";

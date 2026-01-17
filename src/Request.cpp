@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/16 02:08:45 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/17 21:56:22 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -425,7 +425,14 @@ int Request::validLocation(std::string filename)
 		printMsg("Redir: " + _conf.locations[it_l].redirect);
 		if (_conf.locations[it_l].redirect != "")
 		{
-			_pathTarget = "/" + _conf.locations[it_l].redirect;
+			// check for a external URL (starting wit http)
+			if (_conf.locations[it_l].redirect.find("http") == 0)
+			{
+				_pathTarget = _conf.locations[it_l].redirect;
+				return 301; // Return 301 immediately
+			}
+			else
+				_pathTarget = "/" + _conf.locations[it_l].redirect;
 			printMsg("Redirect:" + _pathTarget);
 		}
 	}
@@ -454,6 +461,9 @@ int Request::parsePath()
 		code = 201;
 	code = validLocation(this->_pathTarget);
 	if (code >= 400)
+		return code;
+	// for redirection return immediately
+	if (code >= 300) 
 		return code;
 	// DELETE special case (only checks existance)
 	if (this->_method == "DELETE")
