@@ -488,6 +488,10 @@ LocationConfig Config::parseLocationBlock(const std::string &firstLocationPath)
     it = locParams.find("cgi_ext");
     if (it != locParams.end())
         loc.cgi_ext = it->second;
+
+    it = locParams.find("index");
+    if (it != locParams.end())
+        loc.index = it->second;
     
     it = locParams.find("allow_methods");
     if (it != locParams.end())
@@ -661,6 +665,7 @@ void LocationConfig::debugPrint() const
     std::cout << "upload_to: " << upload_to << "\n";
     std::cout << "cgi_path: " << cgi_path << "\n";
     std::cout << "cgi_ext: " << cgi_ext << "\n";
+    std::cout << "index: " << index << "\n";
     std::cout << "allow_methods: ";
     for (size_t i = 0; i < allow_methods.size(); ++i)
         std::cout << allow_methods[i] << " ";

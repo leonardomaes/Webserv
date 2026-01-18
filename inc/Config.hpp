@@ -56,6 +56,7 @@ struct LocationConfig {
 	std::string					cgi_path;
 	std::string					cgi_ext;
 	std::string					upload_to;
+	std::string					index;
 
 	LocationConfig() : auto_index(false), has_cgi(false) {}
 
@@ -176,7 +177,7 @@ class Config
 				~ParseException() throw() {}
 		};
 
-		// FOR DEBUGGING ONLY
+		// for debugging only
 		void debugPrintAllServers() const;
 
 		ServerConfig getServerConfig(int index);
