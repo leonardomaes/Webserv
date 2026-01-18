@@ -529,7 +529,6 @@ void	Response::handleRedirect(const Request& obj, int eventFD)
 		return ;
 	}
 	std::string resp = "HTTP/1.1 302 Found\r\nLocation: " + redir + "\r\n" + "Content-Length: 0\r\n\r\n";
-	std::cout << resp << std::endl;	// DELETE
 	send(eventFD, resp.c_str(), resp.size(), 0);
 }
 

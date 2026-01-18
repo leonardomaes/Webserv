@@ -110,9 +110,10 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(""), _protocol(""
 
 int Request::fileOpen(std::string target)
 {
-	std::string filename = this->_conf.root;
+	std::string filename = this->_root;
 	filename.append(target);
 	std::ifstream file(filename.c_str(), std::ios::in);
+	std::cout << filename << std::endl;
 	if (!file.is_open())
 		return 0;
 	file.close();
@@ -294,7 +295,6 @@ void Request::postMultipartFile()
 
 void Request::postFormFile()
 {
-	std::cout << "postFormFile" << std::endl;	// DELETE
 	_bodyContent = parseUrlEncodedBody();
 
 		// to allow the DELETE form to work
@@ -538,10 +538,12 @@ int Request::validLocation(std::string filename)
 			_redirURL = _conf.locations[it_l].redirect;
 		}
 	}
+	printMsg("Root >" + _root + "<");
+	printMsg("Target>" + _pathTarget + "<");
 	if (_pathTarget == "/")
 		_pathTarget = "/" + _conf.index;
 	if (!allowed)
-		return 405;  // 404
+		return 405;
 	if (_isRedirect)
 		return 302;
 	if (this->_method == "POST")
@@ -593,6 +595,7 @@ int Request::parsePath()
 	else										// Error case
 	{
 		this->_pathTarget = "/error/404.html";
+		std::cout << _responseCode << std::endl;
 		return 404;
 	}
 	return code;
