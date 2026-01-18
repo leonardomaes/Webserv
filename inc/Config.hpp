@@ -59,22 +59,8 @@ struct LocationConfig {
 
 	LocationConfig() : auto_index(false), has_cgi(false) {}
 
-	// FOR DEBUGGING PORPUSE ONLY - DELETE LATER
-	void debugPrint() const
-    {
-        std::cout << "path: " << path << "\n";
-        std::cout << "root: " << root << "\n";
-        std::cout << "redirect: " << redirect << "\n";
-        std::cout << "auto_index: " << auto_index << "\n";
-        std::cout << "try_file: " << try_file << "\n";
-        std::cout << "upload_to: " << upload_to << "\n";
-        std::cout << "cgi_path: " << cgi_path << "\n";
-        std::cout << "cgi_ext: " << cgi_ext << "\n";
-        std::cout << "allow_methods: ";
-        for (size_t i = 0; i < allow_methods.size(); ++i)
-            std::cout << allow_methods[i] << " ";
-        std::cout << "\n";
-    }
+	// for debugging porpuse
+	void debugPrint() const;
 };
 
 // Struct to store each "server" block info
@@ -94,30 +80,8 @@ struct ServerConfig {
 
 	ServerConfig() : client_max_body_size(0) {}
 	
-	// FOR DEBUGGING PORPUSE ONLY - DELETE LATER
-	void debugPrint() const
-    {
-        std::cout << "=== SERVER CONFIG ===\n";
-        std::cout << "listen: " << listen << "\n";
-        std::cout << "host: " << host << "\n";
-        std::cout << "server_name: " << server_name << "\n";
-        std::cout << "root: " << root << "\n";
-        std::cout << "index: " << index << "\n";
-        std::cout << "client_max_body_size: " << client_max_body_size << "\n";
-        std::cout << "locations count: " << locations.size() << "\n";
-        
-		std::cout << "error_pages:\n";
-		for (std::map<int, std::string>::const_iterator it = error_pages.begin();
-			 it != error_pages.end(); ++it)
-				std::cout << " " << it->first << " -> " << it->second << "\n";
-
-        for (size_t i = 0; i < locations.size(); ++i)
-        {
-            std::cout << "\n--- Location " << i << " ---\n";
-            locations[i].debugPrint();
-        }
-        std::cout << "=====================\n";
-    }
+	// for debugging porpuse
+	void debugPrint() const;
 };
 
 class Config

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmaes <lmaes@student.42porto.com>          +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/05 17:08:51 by lmaes            ###   ########.fr       */
+/*   Updated: 2026/01/18 00:22:28 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,6 +116,5 @@ Webserv::~Webserv()
 	{
 		delete _servers[i];
 	}
-	
 }
 

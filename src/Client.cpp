@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 18:05:15 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/09 23:34:37 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/18 00:24:16 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ bool Client::decodeChunkedBody(const std::string& buffer, size_t body_start, std
 
 		if (chunk_size == 0)
 		{
-			// precisa de \r\n final
+			// needs \r\n at the end
 			if (buffer.size() < pos + 2)
 				return false;
 
@@ -134,6 +134,7 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 		return false;
 
 	size_t body_start = header_end + 4;
+	
 	// Chunked content
 	if (isChunkedRequest(_recvBuffer))
 	{
