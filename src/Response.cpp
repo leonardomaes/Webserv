@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/17 21:59:15 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/18 00:27:24 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,15 +27,6 @@ Response::Response(const Response& obj)
 	_status = obj._status;
 	_root = obj._root;
 }
-
-// Response& Response::operator=(const Response& obj)
-// {
-// 	if (this != &obj)
-// 	{
-// 		*this = obj;
-// 	}
-// 	return *this;
-// }
 
 Response::~Response()
 {
@@ -146,7 +137,7 @@ std::string Response::defaultErrorPage(int error)
 	return ss.str();
 }
 
-std::string Response::getContent(std::string filename)	// Add dynamic error based in http code (TO DO)
+std::string Response::getContent(std::string filename)
 {
 	std::string result;
 	std::string path = this->getRoot() + filename;
@@ -386,12 +377,6 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// check if resource exists
 	struct stat pathStat;
-	// if (stat(fullPath.c_str(), &pathStat) != 0)
-	// {
-	// 	printMsg("Resource not found: " + fullPath);
-	// 	handleERROR(obj, 404, eventFD);
-	// 	return;
-	// }
 
 	// check if it is a directory (folders cannot be deleted)
 	if (S_ISDIR(pathStat.st_mode))

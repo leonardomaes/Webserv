@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/17 22:20:36 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/18 00:25:50 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_header["Host"] = "";
 	_header["Connection"] = "";
 	_header["Accept"] = "";
-	_errorPage[400] = "/error/400.html";		// Config File
+	_errorPage[400] = "/error/400.html";
 	_errorPage[401] = "/error/401.html";
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
@@ -548,7 +548,7 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 		if (_bodyContent.find("filename") == _bodyContent.end() || _bodyContent.find("content") == _bodyContent.end())
 			return;
 
-		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
+		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];	// Error (Need to remove one slash bar from full path)
 		printMsg("Filename(Response):" + filename);
 		if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find("/") != std::string::npos)
 		{

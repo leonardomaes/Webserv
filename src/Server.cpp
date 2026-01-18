@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/06 19:36:46 by lmaes             #+#    #+#             */
-/*   Updated: 2025/12/09 23:30:51 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/18 00:27:43 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,16 +22,6 @@ Server::Server(const Server& obj)
 	_SocketFD = obj._SocketFD;
 	_SocketAddress = obj._SocketAddress;
 }
-
-// Server& Server::operator=(const Server& obj)
-// {
-// 	if (this != &obj)
-// 	{
-// 		*this = obj;
-// 	}
-	
-// 	return *this;
-// }
 
 Server::~Server()
 {

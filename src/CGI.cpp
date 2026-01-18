@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/16 00:23:29 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/18 00:16:07 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,8 +44,6 @@ void CGI::initializeEnv(const Request &request)
     _env["REMOTE_ADDR"] = "127.0.0.1"; 
     _env["SERVER_NAME"] = request.getHeaderContent("Host");
     _env["SERVER_PORT"] = request.getConfig()->listen;
-    
-    // ADD MORE VARS HERE
 }
 
 char** CGI::getEnvAsArray() const
@@ -80,14 +78,14 @@ std::string CGI::execute(const Request& request)
     // child process
     if (pid == 0)
     {
-        close(pipe_in[1]);  // close pipe in write end as child does not write to stdin
-        close(pipe_out[0]); // close pipe out read end as child does not read from stdout
+        close(pipe_in[1]);                  // close pipe in write end as child does not write to stdin
+        close(pipe_out[0]);                 // close pipe out read end as child does not read from stdout
 
         dup2(pipe_in[0], STDIN_FILENO);     // redirect stdin
         dup2(pipe_out[1], STDOUT_FILENO);   // redirect stdout
 
-        close(pipe_in[0]);      // safe practice
-        close(pipe_out[1]);     // safe practice
+        close(pipe_in[0]);                  // safe practice
+        close(pipe_out[1]);                 // safe practice
 
         // preparing execve args and running it
         char *args[] = 
@@ -98,7 +96,7 @@ std::string CGI::execute(const Request& request)
         };
         char ** envp = getEnvAsArray();
         execve(args[0], args, envp);
-        exit(1); // execve failed
+        exit(1);    // execve failed
     }
     else    // parent process
     {
@@ -129,7 +127,7 @@ std::string CGI::execute(const Request& request)
             close(pipe_out[0]);
             throw std::runtime_error("Select failed");
         }
-        else if (ret == 0)           // TIMEOUT REACHED!
+        else if (ret == 0)           // TIMEOUT REACHED
         {
             kill(pid, SIGKILL);      // kill the script
             waitpid(pid, NULL, 0);   // cleanup zombie process
@@ -144,7 +142,7 @@ std::string CGI::execute(const Request& request)
         while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
             result.append(buffer, bytesRead);
         close(pipe_out[0]);
-        waitpid(pid, NULL, 0);  // wait for child
+        waitpid(pid, NULL, 0);      // wait for child
         return (result);
     }
 }

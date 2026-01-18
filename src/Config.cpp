@@ -17,8 +17,7 @@
 /////////////////////////////// HELPER FUNCTIONS ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-// helper function to convert a number into a string using string stream (number to string)
-// evaluate later to change it into an utilities cpp
+// helper function to convert a number into a string with string stream
 static std::string ntos(std::size_t n)
 {
     std::ostringstream oss;
@@ -86,7 +85,7 @@ Config::Config(const std::string &path) :
 Config::Config(const Config &other) :
     _path(other._path),
     _servers(other._servers),
-    _file(),    // can't make a stream copy
+    _file(),                    // can't make a stream copy
     _current_char('\0'),
     _line_nr(0),
     _bracket_depth(0),
@@ -152,8 +151,7 @@ bool Config::parseConfig()
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Config parse error: " << e.what() << std::endl;     // check later with Leo if we somehow implement a more robust and integrated error module 
-        return (false);
+        std::cerr << "Config parse error: " << e.what() << std::endl;
     }
     return (true);
 }
@@ -257,7 +255,6 @@ Token Config::nextToken()
             }
             
             // decided to accept any word as a keyword and let the parser check if the keyword is valide later 
-            // but we can change this behaviour later if needed
             if (value == "server")
                 _seen_server = true;
 
@@ -291,7 +288,7 @@ void Config::consumeWhiteSpace()
         std::isspace(static_cast<unsigned char>(_current_char)))
     {
         if (_current_char == '\n')
-            return; //allow nextToken to increment Line Numeber
+            return;         //allow nextToken to increment Line Numeber
         int c = _file.get();
         _current_char = (c == EOF) ? '\0' : static_cast<char>(c);
     }
@@ -306,10 +303,10 @@ void Config::consumeComment()
     }
 }
 
-// this function fills parameters at a server or at a location level:
-// - assumes a token_value that contains the keywod name
-// - reads if the value until ';' or '}'
-// - populates a map parameters[token_value] = parameter_value
+/* this function fills parameters at a server or at a location level:
+    - assumes a token_value that contains the keywod name
+    - reads if the value until ';' or '}'
+    - populates a map parameters[token_value] = parameter_value */
 void Config::consumeKeyword(std::string &token_value, std::map<std::string, std::string> &parameters)
 {
     std::string parameter_value;
@@ -520,13 +517,11 @@ LocationConfig Config::parseLocationBlock(const std::string &firstLocationPath)
     return (loc);
 }
 
-/*
-Build a ServerConfig from serverParams (temp map) and locations
+/* Build a ServerConfig from serverParams (temp map) and locations
 Here we also implement additions validations needed
 	- mandatory directives needed in the config file
 	- forbiden directives in server
-	- normalization, number validation, etc. 
-*/
+	- normalization, number validation, etc. */
 ServerConfig Config::buildServerConfig(const std::map<std::string, std::string> &serverParams, const std::vector<LocationConfig> &locations) const 
 {
 	ServerConfig conf;
