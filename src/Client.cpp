@@ -125,7 +125,8 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 		if (bytes == 0)
 		{
 			closeConnection(epfd);
-			throw ClientException("client disconnected");
+			return false;
+			// throw ClientException("client disconnected");
 		}
 		break;
 	}
@@ -173,8 +174,6 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 	printMsg(_recvBuffer);
 	printMsg("(END)");
 	_recvBuffer.clear();
-	// if (_request.isChunked())
-	// 	std::cout << "LOG::" << RED << "Chunked encoding rejected\n" << RESET;	// LOG
 	
 	return true;
 }
@@ -184,6 +183,11 @@ void Client::sendResponse(int epfd, int eventFD)
 	this->_response = Response();
 	// printMsg("Body(test):" + this->_request.getBody() + "<");
 	this->_response.generateResponse(this->_request, epfd, eventFD);
+	if (_request.getConnection() != "keep-alive")
+	{
+		closeConnection(epfd);
+	}
+	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

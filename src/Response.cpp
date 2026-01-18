@@ -369,6 +369,12 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// check if resource exists
 	struct stat pathStat;
+	if (stat(fullPath.c_str(), &pathStat) != 0)
+	{
+		printMsg("Resource not found: " + fullPath);
+		handleERROR(obj, 404, eventFD);
+		return;
+	}
 	// check if it is a directory (folders cannot be deleted)
 	if (S_ISDIR(pathStat.st_mode))
 	{

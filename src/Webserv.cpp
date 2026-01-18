@@ -107,6 +107,11 @@ void Webserv::run()
 		}
 	}
 	std::cout << "\nShutting down gracefully\n" << std::endl;
+	// Close connection to clients
+	for (int it = 0; it < MAX_CONNECTIONS; it++)
+	{
+		_clients[it].closeConnection(_epfd);
+	}
 	close(_epfd);
 }
 
