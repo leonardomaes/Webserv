@@ -27,6 +27,8 @@ private:
 	std::map<std::string, std::string> _queryContent;
 	std::string		_protocol;
 	std::string		_root;
+	std::string		_matchedLocation;
+	std::string		_locationIndex;
 	std::map<std::string, std::string> _header;
 	std::string		_body;
 	std::map<std::string, std::string> _bodyContent;
@@ -49,6 +51,7 @@ private:
 	int				parseFirstLine(std::string line);
 	void			parseTarget(const std::string& target);
 	void			parseHeader(std::string line);
+	std::string		buildFilesystemPath(bool hasRoot) const;
 	int				validLocation(std::string filename);
 	int				parsePath();
 	void			parseBody(std::string &buffer, size_t header_end);

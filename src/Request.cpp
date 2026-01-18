@@ -27,6 +27,8 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_root = "";
 	_query = "";
 	_redirURL = "";
+	_matchedLocation = "";
+	_locationIndex = "";
 }
 
 Request::Request(const Request& obj)
@@ -45,6 +47,8 @@ Request::Request(const Request& obj)
 	_root = obj._root;
 	_query = obj._query;
 	_redirURL = obj._redirURL;
+	_matchedLocation = obj._matchedLocation;
+	_locationIndex = obj._locationIndex;
 }
 
 Request& Request::operator=(const Request &obj)
@@ -69,6 +73,8 @@ Request& Request::operator=(const Request &obj)
 		this->_isRedirect = obj._isRedirect;
 		this->_firstLine = obj._firstLine;
 		this->_responseCode = obj._responseCode;
+		this->_matchedLocation = obj._matchedLocation;
+		this->_locationIndex = obj._locationIndex;
 
 		this->_conf = obj._conf;
 	}
@@ -104,6 +110,8 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(""), _protocol(""
 	_root = "";
 	_query = "";
 	_redirURL = "";
+	_matchedLocation = "";
+	_locationIndex = "";
 }
 
 
@@ -498,29 +506,33 @@ int Request::validLocation(std::string filename)
 		const std::string& loc = _conf.locations[i].path;
 
 		if (loc == "/" || (filename.compare(0, loc.size(), loc) == 0 && (filename.size() == loc.size() || filename[loc.size()] == '/')))
-		{		// may have problems here
+		{
 			if (loc.size() > bestLen)
 			{
 				best = i;
 				bestLen = loc.size();
 			}
 		}
-		printMsg("Filename: " + _conf.locations[i].path);
+		printMsg("Location Filename: " + _conf.locations[i].path);
 	}
 	printMsg("Filename: " + filename);
 	it_l = best;
 	bool allowed = false;
+	bool locationHasRoot = false;
 	if (best == _conf.locations.size()) // Case there is no location
 	{
 		if (this->_method == "GET" || this->_method == "POST" || this->_method == "DELETE")
 			allowed = true;
 		_root = _conf.root;
+		_matchedLocation = "";
+		_locationIndex = _conf.index;
 	}
 	else
 	{
+		printMsg("Location Founded: " + _conf.locations[it_l].path);
 		// Check in the location for the ALLOWED METHODS
 		for (size_t i = 0; i < _conf.locations[it_l].allow_methods.size(); i++)
-		{
+		{	
 			if (_conf.locations[it_l].allow_methods[i] == this->_method)
 			{
 				allowed = true;
@@ -528,20 +540,32 @@ int Request::validLocation(std::string filename)
 			}
 		}
 		printMsg("Location Root>" + _conf.locations[it_l].root + "<");
-		if (_conf.locations[it_l].root != "")
+		if (!_conf.locations[it_l].root.empty())
+		{
 			_root = _conf.locations[it_l].root;
+			locationHasRoot = true;
+		}
 		else
 			_root = _conf.root;
-		if (_conf.locations[it_l].redirect != "")
+		_matchedLocation = _conf.locations[it_l].path;
+		printMsg("Location index:" + _conf.locations[it_l].index);
+		if (_conf.locations[it_l].index != "")
+			_locationIndex = _conf.locations[it_l].index;
+		else
+			_locationIndex = _conf.index;
+		if (!_conf.locations[it_l].redirect.empty())
 		{
 			_isRedirect = true;
 			_redirURL = _conf.locations[it_l].redirect;
 		}
 	}
+	std::cout << "Start" << std::endl;
+	std::cout << "Index:" << _locationIndex << std::endl;
+	printMsg("Target>" + _pathTarget + "<");
+	_pathTarget = buildFilesystemPath(locationHasRoot);
 	printMsg("Root >" + _root + "<");
 	printMsg("Target>" + _pathTarget + "<");
-	if (_pathTarget == "/")
-		_pathTarget = "/" + _conf.index;
+	std::cout << "End" << std::endl;
 	if (!allowed)
 		return 405;
 	if (_isRedirect)
@@ -551,21 +575,48 @@ int Request::validLocation(std::string filename)
 	return 200;
 }
 
+std::string Request::buildFilesystemPath(bool hasRoot) const
+{
+    std::string path = _pathTarget;
+
+	printMsg("FilesysyemPath>" + path + "<");
+	std::cout << hasRoot << std::endl;
+    if (hasRoot == true && !_matchedLocation.empty())
+    {
+        path.erase(0, _matchedLocation.size());
+        if (path.empty())
+            path = "/";
+    }
+
+    std::string full = path;
+
+	printMsg("FilesysyemPath>" + full + "<");
+    if (!full.empty() && full[full.size() - 1] == '/')
+    {
+        if (!_locationIndex.empty())
+            full += _locationIndex;
+    }
+
+	printMsg("FilesysyemPath>" + full + "<");
+    return full;
+}
+
+
 int Request::parsePath()
 {
 	// if there is a query "value" append it to the path (to allow GET webpage to work)
-    if (_method == "GET" && !_queryContent["value"].empty())
-    {
-        std::string filename = _queryContent["value"];
-        if (filename.find("..") == std::string::npos) 
-        {
-            if (_pathTarget[_pathTarget.size() - 1] != '/')
-                _pathTarget += "/";
-            
-            _pathTarget += filename;
-            printMsg("Path modified by query: " + _pathTarget);
-        }
-    }
+	if (_method == "GET" && !_queryContent["value"].empty())
+	{
+		std::string filename = _queryContent["value"];
+		if (filename.find("..") == std::string::npos) 
+		{
+			if (_pathTarget[_pathTarget.size() - 1] != '/')
+				_pathTarget += "/";
+			
+			_pathTarget += filename;
+			printMsg("Path modified by query: " + _pathTarget);
+		}
+	}
 	printMsg("Root:" + this->_root);
 	int code = 200;
 	if (this->_method == "POST")
@@ -663,7 +714,7 @@ void Request::parseRequest(std::string buffer)
 		if (line == "\r" || line.empty())
 			break;
 		parseHeader(line);
-		// printMsg("->" + line);	// DEBUG
+		printMsg("->" + line);	// DEBUG
 	}
 	if (_responseCode < 400)
 		_responseCode = parsePath();

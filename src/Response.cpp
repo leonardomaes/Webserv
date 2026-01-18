@@ -259,7 +259,7 @@ void Response::handleGET(const Request& obj, int eventFD)
 			{
 				// if autoindex is disabled and no index file, send 403 error
 				printMsg("Autoindex disabled and no index file - 403 Forbiden");
-				handleERROR(obj, 403, eventFD);
+				handleERROR(obj, 404, eventFD);
 				return;
 			}
 		}			
