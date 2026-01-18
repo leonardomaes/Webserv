@@ -551,6 +551,19 @@ int Request::validLocation(std::string filename)
 
 int Request::parsePath()
 {
+	// if there is a query "value" append it to the path (to allow GET webpage to work)
+    if (_method == "GET" && !_queryContent["value"].empty())
+    {
+        std::string filename = _queryContent["value"];
+        if (filename.find("..") == std::string::npos) 
+        {
+            if (_pathTarget[_pathTarget.size() - 1] != '/')
+                _pathTarget += "/";
+            
+            _pathTarget += filename;
+            printMsg("Path modified by query: " + _pathTarget);
+        }
+    }
 	printMsg("Root:" + this->_root);
 	int code = 200;
 	if (this->_method == "POST")
