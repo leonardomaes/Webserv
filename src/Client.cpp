@@ -23,16 +23,6 @@ Client::Client(const Client &obj)
 	_response = obj._response;
 }
 
-// Client& Client::operator=(const Client& obj)
-// {
-// 	if (this != &obj)
-// 	{
-// 		*this = obj;
-// 	}
-	
-// 	return *this;
-// }
-
 Client::~Client()
 {
 }
@@ -152,7 +142,6 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 
 		if (!decodeChunkedBody(_recvBuffer, body_start, decodedBody, consumed))
 			return false;
-		printMsg(_recvBuffer);
 
 		std::string full_request = _recvBuffer.substr(0, body_start) + decodedBody;
 
@@ -192,7 +181,7 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 void Client::sendResponse(int epfd, int eventFD)
 {
 	this->_response = Response();
-	printMsg("Body(test):" + this->_request.getBody() + "<");
+	// printMsg("Body(test):" + this->_request.getBody() + "<");
 	this->_response.generateResponse(this->_request, epfd, eventFD);
 }
 

@@ -14,7 +14,7 @@
 
 Response::Response()
 {
-	this->_root = "assets/html/";  // Config File
+	this->_root = "";
 	this->FillStatus();
 	_handler["GET"] = &Response::handleGET;
 	_handler["POST"] = &Response::handlePOST;
@@ -27,15 +27,6 @@ Response::Response(const Response& obj)
 	_status = obj._status;
 	_root = obj._root;
 }
-
-// Response& Response::operator=(const Response& obj)
-// {
-// 	if (this != &obj)
-// 	{
-// 		*this = obj;
-// 	}
-// 	return *this;
-// }
 
 Response::~Response()
 {
@@ -378,13 +369,6 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// check if resource exists
 	struct stat pathStat;
-	// if (stat(fullPath.c_str(), &pathStat) != 0)
-	// {
-	// 	printMsg("Resource not found: " + fullPath);
-	// 	handleERROR(obj, 404, eventFD);
-	// 	return;
-	// }
-
 	// check if it is a directory (folders cannot be deleted)
 	if (S_ISDIR(pathStat.st_mode))
 	{
@@ -426,9 +410,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 	std::string header = "HTTP/1.1 " + ss1.str() + " " + _status[error] + "\r\n";
 
 	std::string body;
-	std::string path = getRoot();
-	path.append(obj.getErrorPage(error));
-
+	std::string path = getRoot() + "/" + obj.getErrorPage(error);
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (file.is_open())
 	{
@@ -523,18 +505,48 @@ void Response::handleCGI(const Request& obj, const LocationConfig* loc, int even
 	}
 }
 
-// Response starts here
-void Response::generateResponse(const Request& obj, int epfd, int eventFD)
+void	Response::handleRedirect(const Request& obj, int eventFD)
 {
+	std::string url(obj.getRedir());
+	std::string redir;
+	if (url.find("localhost") == 0)
+	{
+		if (url.find("/") != url.length() - 1)
+			url.append("/");
+		redir = url.substr(url.find("/"), std::string::npos);
+	}
+	else if (url.find("http") == 0)
+		redir = url;
+	else
+	{
+		handleERROR(obj, 400, eventFD);
+		return ;
+	}
+	std::string resp = "HTTP/1.1 302 Found\r\nLocation: " + redir + "\r\n" + "Content-Length: 0\r\n\r\n";
+	std::cout << resp << std::endl;	// DELETE
+	send(eventFD, resp.c_str(), resp.size(), 0);
+}
+
+// Response starts here
+void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
+{
+	if (obj.isRedir())
+	{
+		handleRedirect(obj, eventFD);
+		if (obj.getCode() >= 400)
+			std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
+						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		else
+			std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
+						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		return ;
+	}
+	
 	this->_root = obj.getRoot();
 	// printMsg("Body(test):" + obj.getBody() + "<");
 	std::stringstream dbg_ss;
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
-
-	// CGI indentification and handling
-	// ******************************************************************
-
 	// get the location that mathes this request
 	const LocationConfig *loc = getLocationConfig(obj);
 
@@ -552,6 +564,12 @@ void Response::generateResponse(const Request& obj, int epfd, int eventFD)
 			epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
 			close(eventFD);
 		}
+		if (obj.getCode() >= 400)
+			std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
+						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		else
+			std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
+						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
 		return;
 	}
 

@@ -28,16 +28,17 @@ private:
 	// Member Functions
 	typedef void (Response::*MethodHandler)(const Request&, int);
 	// Member Functions
-	void handleGET(const Request& obj, int eventFD);
-	void handlePOST(const Request& obj, int eventFD);
-	bool isDELETEAllowed(const Request& obj);
-	void handleDELETE(const Request& obj, int eventFD);
-	void handleCGI(const Request &obj, const LocationConfig* loc, int eventFD);     // CGI feature
-	const LocationConfig *getLocationConfig(const Request& obj);    // location matching (handler for CGI, isAutoIndexEnabled, etc.)
-	std::string defaultErrorPage(int error);
-	void handleERROR(const Request& obj, int error, int eventFD);
-	void sendFavicon(const Request& obj, int eventFD);
-	void respond(std::string header, std::string body, int eventFD);
+	void		handleGET(const Request& obj, int eventFD);
+	void		handlePOST(const Request& obj, int eventFD);
+	bool		isDELETEAllowed(const Request& obj);
+	void		handleDELETE(const Request& obj, int eventFD);
+	void		handleCGI(const Request &obj, const LocationConfig* loc, int eventFD);     // CGI feature
+	void		handleRedirect(const Request& obj, int eventFD);
+	const LocationConfig	*getLocationConfig(const Request& obj);    // location matching (handler for CGI, isAutoIndexEnabled, etc.)
+	std::string	defaultErrorPage(int error);
+	void		handleERROR(const Request& obj, int error, int eventFD);
+	void		sendFavicon(const Request& obj, int eventFD);
+	void		respond(std::string header, std::string body, int eventFD);
 
 	std::map<int, std::string> _status;
 	std::string _root;

@@ -12,13 +12,13 @@
 
 #include "../inc/Request.hpp"
 
-Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200), _isChunked(false), _isImage(false)
+Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200), _isChunked(false), _isBinary(false), _isRedirect(false)
 {
 	// printMsg("Constructor 1");
 	_header["Host"] = "";
 	_header["Connection"] = "";
 	_header["Accept"] = "";
-	_errorPage[400] = "/error/400.html";		// Config File
+	_errorPage[400] = "/error/400.html";
 	_errorPage[401] = "/error/401.html";
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
@@ -26,6 +26,7 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_body = "";
 	_root = "";
 	_query = "";
+	_redirURL = "";
 }
 
 Request::Request(const Request& obj)
@@ -35,13 +36,15 @@ Request::Request(const Request& obj)
 	_pathTarget = obj._pathTarget;
 	_protocol = obj._protocol;
 	_isChunked = obj._isChunked;
-	_isImage = obj._isImage;
+	_isBinary = obj._isBinary;
+	_isRedirect = obj._isRedirect;
 	_firstLine = obj._firstLine;
 	_responseCode = obj._responseCode;
 	_errorPage = obj._errorPage;
 	_conf = obj._conf;
 	_root = obj._root;
 	_query = obj._query;
+	_redirURL = obj._redirURL;
 }
 
 Request& Request::operator=(const Request &obj)
@@ -51,6 +54,7 @@ Request& Request::operator=(const Request &obj)
 		this->_method = obj._method;
 		this->_pathTarget = obj._pathTarget;
 		this->_query = obj._query;
+		this->_redirURL = obj._redirURL;
 		this->_protocol = obj._protocol;
 		this->_root = obj._root;
 		this->_body = obj._body;
@@ -61,7 +65,8 @@ Request& Request::operator=(const Request &obj)
 		this->_errorPage = obj._errorPage;
 
 		this->_isChunked = obj._isChunked;
-		this->_isImage = obj._isImage;
+		this->_isBinary = obj._isBinary;
+		this->_isRedirect = obj._isRedirect;
 		this->_firstLine = obj._firstLine;
 		this->_responseCode = obj._responseCode;
 
@@ -75,7 +80,7 @@ Request::~Request()
 	
 }
 
-Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""), _firstLine(1),  _responseCode(200), _isChunked(false), _isImage(false)
+Request::Request(ServerConfig conf) : _method(""), _pathTarget(""), _protocol(""), _firstLine(1),  _responseCode(200), _isChunked(false), _isBinary(false), _isRedirect(false)
 {
 	// printMsg("Constructor 3");
 	_header["Host"] = "";
@@ -84,8 +89,8 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	for (std::map<int, std::string>::iterator it = conf.error_pages.begin(); it != conf.error_pages.end(); it++)
 	{
 		size_t dot = it->second.find('.');
-		// if (dot == std::string::npos)
-		// 	_errorPage[it->first] = it->second;
+		if (dot == std::string::npos)
+			_errorPage[it->first] = it->second;
 		size_t slash = it->second.find('/') + 1;
 		if (slash == std::string::npos)
 			slash = 0;
@@ -98,13 +103,14 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(), _protocol(""),
 	_body = "";
 	_root = "";
 	_query = "";
+	_redirURL = "";
 }
 
 
 
 int Request::fileOpen(std::string target)
 {
-	std::string filename = this->_conf.root;	// Config file
+	std::string filename = this->_conf.root;
 	filename.append(target);
 	std::ifstream file(filename.c_str(), std::ios::in);
 	if (!file.is_open())
@@ -113,10 +119,52 @@ int Request::fileOpen(std::string target)
 	return 1;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////// POST TEXT ////////////////////////////////////////
+/////////////////////////////////////// POST FILE ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 
+
+std::string Request::extractFilename(const std::string& headers)
+{
+	size_t pos = headers.find("filename=");
+	if (pos == std::string::npos)
+		return "";
+
+	pos += 9;
+	if (headers[pos] == '"')
+		pos++;
+
+	size_t end = headers.find_first_of("\"\r\n", pos);
+	return headers.substr(pos, end - pos);
+}
+
+std::string Request::sanitizeFilename(const std::string& filename)
+{
+	std::string clean;
+
+	for (size_t i = 0; i < filename.size(); i++)
+	{
+		if (isalnum(filename[i]) || filename[i] == '.' || filename[i] == '_')
+			clean += filename[i];
+	}
+
+	if (clean.empty())
+		clean = "upload.bin";
+
+	return clean;
+}
+
+bool Request::writeBinaryFile(const std::string& path, const std::string& data)
+{
+	std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
+	if (!ofs.is_open())
+		return false;
+
+	ofs.write(data.data(), data.size());
+	ofs.close();
+	return true;
+}
 
 size_t Request::getContentLength() const
 {
@@ -147,6 +195,16 @@ std::string Request::decodeUrl(const std::string &str) const
 			out += str[i];
 	}
 	return out;
+}
+
+std::string Request::getMultipartBoundary()
+{
+	std::string content_type = _header["Content-Type"];
+	size_t pos = content_type.find("boundary=");
+	if (pos == std::string::npos)
+		return "";
+
+	return "--" + content_type.substr(pos + 9);
 }
 
 std::map<std::string, std::string> Request::parseUrlEncodedBody()
@@ -183,65 +241,7 @@ std::map<std::string, std::string> Request::parseUrlEncodedBody()
 	return result;
 }
 
-
-//////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////// POST IMAGE ///////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-
-
-std::string Request::getMultipartBoundary()
-{
-	std::string content_type = _header["Content-Type"];
-	size_t pos = content_type.find("boundary=");
-	if (pos == std::string::npos)
-		return "";
-
-	return "--" + content_type.substr(pos + 9);
-}
-
-std::string Request::extractFilename(const std::string& headers)
-{
-	size_t pos = headers.find("filename=");
-	if (pos == std::string::npos)
-		return "";
-
-	pos += 9;
-	if (headers[pos] == '"')
-		pos++;
-
-	size_t end = headers.find_first_of("\"\r\n", pos);
-	return headers.substr(pos, end - pos);
-}
-
-std::string Request::sanitizeFilename(const std::string& filename)
-{
-	std::string clean;
-
-	for (size_t i = 0; i < filename.size(); i++)
-	{
-		if (isalnum(filename[i]) || filename[i] == '.' || filename[i] == '_')
-			clean += filename[i];
-	}
-
-	if (clean.empty())
-		clean = "upload.bin";
-
-	return clean;
-}
-
-bool Request::writeBinaryFile(const std::string& path, const std::string& data)
-{
-	std::ofstream ofs(path.c_str(), std::ios::binary);
-	if (!ofs.is_open())
-		return false;
-
-	ofs.write(data.data(), data.size());
-	ofs.close();
-	return true;
-}
-
-
-void Request::parseMultipartImage()
+void Request::postMultipartFile()
 {
 	std::string boundary = getMultipartBoundary();
 	if (boundary.empty())
@@ -288,11 +288,88 @@ void Request::parseMultipartImage()
 		_responseCode = 500;
 		return;
 	}
-
-	_responseCode = 201;
+	if (!_isRedirect)
+		_responseCode = 201;
 }
 
-void Request::postBinaryImage()
+void Request::postFormFile()
+{
+	std::cout << "postFormFile" << std::endl;	// DELETE
+	_bodyContent = parseUrlEncodedBody();
+
+		// to allow the DELETE form to work
+	// if this is a method override (DELETE) does not do like a file upload
+	if (_bodyContent.find("_method") != _bodyContent.end())
+		return;
+	// if filenamane or content are missing it's an DELETE and not a file upload
+	/* if (_bodyContent.find("filename") == _bodyContent.end() || _bodyContent.find("content") == _bodyContent.end())
+		return; */
+
+	std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];	// Error (Need to remove one slash bar from full path)
+	printMsg("Filename(Response):" + filename);
+	if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find("/") != std::string::npos)
+	{
+		_responseCode = 400;
+		return ;
+	}
+	std::string content = _bodyContent["content"];
+	std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
+	if (!file.is_open())
+	{
+		_responseCode = 400;
+		return ;
+	}
+	file << content;
+	file.close();
+}
+
+bool Request::targetHasFilename() const
+{
+	size_t slash = _pathTarget.find_last_of('/');
+	if (slash == std::string::npos)
+		return false;
+
+	std::string last = _pathTarget.substr(slash + 1);
+	return last.find('.') != std::string::npos;
+}
+
+std::string Request::getFilenameFromTarget() const
+{
+	size_t slash = _pathTarget.find_last_of('/');
+	if (slash == std::string::npos)
+		return "";
+
+	return _pathTarget.substr(slash + 1);
+}
+
+std::string Request::getUploadDirectory() const
+{
+	if (!targetHasFilename())
+		return _root + _pathTarget;
+
+	size_t slash = _pathTarget.find_last_of('/');
+	return _root + _pathTarget.substr(0, slash + 1);
+}
+
+
+std::string Request::generateFilename()
+{
+	std::stringstream ss;
+	ss << "upload_" << time(NULL) << ".bin";
+	return ss.str();
+}
+
+
+std::string Request::getUploadFilename() const
+{
+	size_t pos = _query.find("name=");
+	if (pos == std::string::npos)
+		return "";
+
+	return _query.substr(pos + 5);
+}
+
+void Request::postBinaryFile()
 {
 	const std::string& body = getBody();
 	if (body.empty())
@@ -300,22 +377,36 @@ void Request::postBinaryImage()
 		_responseCode = 400;
 		return ;
 	}
-	std::string target = _pathTarget;
-	if (!target.empty() && target[0] == '/')
-		target.erase(0, 1);
-	if (target.find("..") != std::string::npos)
+	std::string filename = "";
+	std::string uploadDir = "";
+	if (targetHasFilename())
+	{
+		filename = getFilenameFromTarget();
+		uploadDir = getUploadDirectory();
+	}
+	else
+	{
+		filename = getUploadFilename();
+		if (filename.empty())
+			filename = generateFilename();
+		uploadDir = _root + _pathTarget;
+	}
+	if (filename.find("..") != std::string::npos || filename.find('/') != std::string::npos)
 	{
 		_responseCode = 400;
-		return ;
-	}
-	std::string upload_path = _root + _pathTarget;
-	printMsg("upload: " + upload_path);
-	if (!writeBinaryFile(upload_path, body))
-	{
-		_responseCode = 500;
 		return;
 	}
-	_responseCode = 201;
+	if (!uploadDir.empty() && uploadDir[uploadDir.size() - 1] != '/')
+			uploadDir += "/";
+
+	std::string upload_path = uploadDir + filename;
+	if (!writeBinaryFile(upload_path, body))
+	{
+		_responseCode = 403;
+		return;
+	}
+	if (!_isRedirect)
+		_responseCode = 201;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -332,7 +423,7 @@ int Request::parseFirstLine(std::string line)
 		this->_method.insert(_method.end(), line[i++]);
 	i++;
 	// If _method is invalid , then Invalid Method
-	if (_method != "GET" && _method != "POST" && _method != "DELETE")	// It is already in Response::generateResponse
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
 		code = 405;
 	if (_method == "POST")
 		code = 201;
@@ -344,6 +435,29 @@ int Request::parseFirstLine(std::string line)
 	if (_protocol != "HTTP/1.1" && code < 400)
 		code = 400;
 	return code;
+}
+
+void Request::parseTarget(const std::string& target)
+{
+	size_t qpos = target.find('?');
+	if (qpos == std::string::npos)
+	{
+		_pathTarget = target;
+		_query = "";
+	}
+	else
+	{
+		_query = target.substr(qpos+1);
+		_pathTarget = target.substr(0, qpos);
+
+		size_t eq = _query.find('=');
+		if (eq != std::string::npos)
+		{
+			std::string key = decodeUrl(_query.substr(0, eq));
+			std::string val = decodeUrl(_query.substr(eq + 1));
+			_queryContent[key] = val;
+		}
+	}
 }
 
 void Request::parseHeader(std::string line)
@@ -366,9 +480,9 @@ void Request::parseHeader(std::string line)
 		_isChunked = true;
 		// _responseCode = 411;
 	}
-	if (key == "Content-Type" && (value == "image/png" || value == "image/jpeg" || value == "application/octet-stream"))
+	if (key == "Content-Type" && (value == "image/png" || value == "image/jpeg" || value == "application/octet-stream" || value == "text/plain"))
 	{
-		_isImage = true;
+		_isBinary = true;
 	}
 	
 }
@@ -412,42 +526,31 @@ int Request::validLocation(std::string filename)
 				allowed = true;
 				break;
 			}
-			printMsg("Location: " + _conf.locations[it_l].path);
-			printMsg("Location: " + filename);
-			printMsg("Method: " + _conf.locations[it_l].allow_methods[i]);
-			printMsg("Method: " + this->_method);
 		}
 		printMsg("Location Root>" + _conf.locations[it_l].root + "<");
 		if (_conf.locations[it_l].root != "")
 			_root = _conf.locations[it_l].root;
 		else
 			_root = _conf.root;
-		printMsg("Redir: " + _conf.locations[it_l].redirect);
 		if (_conf.locations[it_l].redirect != "")
 		{
-			_pathTarget = "/" + _conf.locations[it_l].redirect;
-			printMsg("Redirect:" + _pathTarget);
+			_isRedirect = true;
+			_redirURL = _conf.locations[it_l].redirect;
 		}
 	}
 	if (_pathTarget == "/")
 		_pathTarget = "/" + _conf.index;
 	if (!allowed)
 		return 405;  // 404
+	if (_isRedirect)
+		return 302;
 	if (this->_method == "POST")
 		return 201;
-	else
-		return 200;
+	return 200;
 }
 
 int Request::parsePath()
 {
-	if (this->_pathTarget == "/favicon.ico")	// Special case
-	{
-		if (this->_method != "GET")
-			return 405;
-		_root = _conf.root;
-		return 200;
-	}
 	printMsg("Root:" + this->_root);
 	int code = 200;
 	if (this->_method == "POST")
@@ -509,71 +612,19 @@ void Request::parseBody(std::string &buffer, size_t header_end)
 	_body = buffer.substr(body_start);	// Removed content length
 	std::string content_type = _header["Content-Type"];
 
-	if (content_type.find("multipart/form-data") != std::string::npos)
-	{
-		parseMultipartImage();
-	}
-	else if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
-	{
-		_bodyContent = parseUrlEncodedBody();
-
-		// to allow the DELETE form to work
-		// if this is a method override (DELETE) does not do like a file upload
-		if (_bodyContent.find("_method") != _bodyContent.end())
-			return;
-		// if filenamane or content are missing it's an DELETE and not a file upload
-		if (_bodyContent.find("filename") == _bodyContent.end() || _bodyContent.find("content") == _bodyContent.end())
-			return;
-
-		std::string filename = _root + _pathTarget + '/' + _bodyContent["filename"];	// Erro (Need to remove one slash bar from full path)
-		printMsg("Filename(Response):" + filename);
-		if (_bodyContent["filename"].find("..") != std::string::npos || _bodyContent["filename"].find("/") != std::string::npos)
-		{
-			_responseCode = 400;
-			return ;
-		}
-		std::string content = _bodyContent["content"];
-		std::ofstream file(filename.c_str(), std::ios::binary | std::ios::out);
-		if (!file.is_open())
-		{
-			_responseCode = 400;
-			return ;
-		}
-		file << content;
-		file.close();
-	}
-	else if (_isImage)
-		postBinaryImage();
+	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
+		postFormFile();
+	else if (content_type.find("multipart/form-data") != std::string::npos)
+		postMultipartFile();
+	else if (_isBinary)
+		postBinaryFile();
 	else
 		_responseCode = 415;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////// FUNCTIONS ///////////////////////////////////////
+////////////////////////////////////////// PUBLIC ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-
-void Request::parseTarget(const std::string& target)
-{
-	size_t qpos = target.find('?');
-	if (qpos == std::string::npos)
-	{
-		_pathTarget = target;
-		_query = "";
-	}
-	else
-	{
-		_query = target.substr(qpos+1);
-		_pathTarget = target.substr(0, qpos);
-
-		size_t eq = _query.find('=');
-		if (eq != std::string::npos)
-		{
-			std::string key = decodeUrl(_query.substr(0, eq));
-			std::string val = decodeUrl(_query.substr(eq + 1));
-			_queryContent[key] = val;
-		}
-	}
-}
 
 void Request::parseRequest(std::string buffer)
 {
@@ -646,6 +697,11 @@ std::string Request::getConnection() const
 	return _header.at("Connection");
 }
 
+std::string Request::getRedir() const
+{
+	return _redirURL;
+}
+
 std::string Request::getHeaderContent(std::string key) const
 {
 	   std::map<std::string, std::string>::const_iterator it;
@@ -696,10 +752,14 @@ bool Request::isChunked() const
 	return _isChunked;
 }
 
-
 bool Request::isImage() const
 {
-	return _isImage;
+	return _isBinary;
+}
+
+bool Request::isRedir() const
+{
+	return _isRedirect;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
