@@ -3,15 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/17 22:44:27 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 09:58:15 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-
 
 #include <algorithm>
 #include <cctype>
@@ -68,7 +67,6 @@
 #define BCK_WHITE   "\033[47m"
 
 // Macros
-
 #define MAX_EVENTS 64
 #define MAX_CONNECTIONS 16
 #define BUFFER_SIZE 4096

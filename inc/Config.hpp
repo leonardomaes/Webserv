@@ -14,9 +14,9 @@
 
 #include <string>
 #include <fstream>
-#include <iostream>		// for std::cerr (check if needed)
-#include <stdexcept> 	// for std::runtime_error (check if needed)
-#include <cctype> 		// for std::isspace, std::isalpha, etc.
+#include <iostream>		
+#include <stdexcept> 	// for std::runtime_error 
+#include <cctype> 		
 #include <vector>
 #include <map>
 
@@ -142,10 +142,8 @@ class Config
 
 		/*
 		Each Config object created will be connect to a specific config file;
-		TO DECIDE: if the parser is iniciated in the constructor (automatic when object is created) or independently (need to be called)
 		*/
 		Config(const std::string &path);
-
 		Config();
 		Config(const Config &other);
 		Config& operator=(const Config& other);
@@ -164,6 +162,7 @@ class Config
 		Getter for access the server configurations. Each entry Server confog corresponds to a "server { ... }" block from the file. 
 		*/
 		const std::vector<ServerConfig> &getServers() const;
+		ServerConfig getServerConfig(int index);
 
 		// costumized exception to deal with parsing errors
 		class ParseException : public std::exception
@@ -180,7 +179,6 @@ class Config
 		// for debugging only
 		void debugPrintAllServers() const;
 
-		ServerConfig getServerConfig(int index);
 };
 
 

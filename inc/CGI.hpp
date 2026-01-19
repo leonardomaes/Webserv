@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:22:39 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/15 23:58:21 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 09:46:01 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,11 +26,11 @@
 class CGI
 {
     private:
-        std::map<std::string, std::string> _env;    // some people use a struct to store the variables instead of a maps
-        std::string _scriptPath;                    // something in the cgi-bin dir
-        std::string _interpreterPath;              // for example /usr/bin/python3 for python
+        std::map<std::string, std::string> _env;
+        std::string _scriptPath;                    
+        std::string _interpreterPath;              
 
-        char** getEnvAsArray() const;              // converts the map of env vars into an array so that ir can be used in execve
+        char** getEnvAsArray() const;               // converts the map of env vars into an array so that ir can be used in execve
 
     public:
         CGI(const std::string &scriptPath, const std::string &interpreterPath);
