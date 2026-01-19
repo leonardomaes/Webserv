@@ -18,5 +18,5 @@
 //global variable
 extern volatile sig_atomic_t g_running;
 
-//function definition
+//function
 void signal_handler(int signum);
