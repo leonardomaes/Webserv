@@ -641,11 +641,11 @@ int Request::parsePath()
 			return 404;
 		}
 	}
-	if (this->fileOpen(this->_pathTarget) || _method != "GET")		// Generic case (GET/POST)
+	if (this->fileOpen(this->_pathTarget) || _method != "GET" || _isRedirect)		// Generic case (GET/POST)
 		return code;
 	else										// Error case
 	{
-		this->_pathTarget = "/error/404.html";
+		this->_pathTarget = "/error/404.html";	// DELETE
 		return 404;
 	}
 	return code;

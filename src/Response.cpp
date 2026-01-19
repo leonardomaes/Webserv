@@ -522,24 +522,49 @@ void Response::handleCGI(const Request& obj, const LocationConfig* loc, int even
 	}
 }
 
-void	Response::handleRedirect(const Request& obj, int eventFD)
+// void	Response::handleRedirect(const Request& obj, int eventFD)
+// {
+// 	std::string url(obj.getRedir());
+// 	std::string redir;
+// 	if (url.find("localhost") == 0)
+// 	{
+// 		if (url.find("/") != url.length() - 1)
+// 			url.append("/");
+// 		redir = url.substr(url.find("/"), std::string::npos);
+// 	}
+// 	else if (url.find("http") == 0)
+// 		redir = url;
+// 	else
+// 	{
+// 		handleERROR(obj, 400, eventFD);
+// 		return ;
+// 	}
+// 	std::string resp = "HTTP/1.1 302 Found\r\nLocation: " + redir + "\r\n" + "Content-Length: 0\r\n\r\n";
+// 	send(eventFD, resp.c_str(), resp.size(), 0);
+// }
+
+void Response::handleRedirect(const Request& obj, int eventFD)
 {
-	std::string url(obj.getRedir());
-	std::string redir;
-	if (url.find("localhost") == 0)
+	const std::string& redir = obj.getRedir();
+
+	if (redir.empty())
 	{
-		if (url.find("/") != url.length() - 1)
-			url.append("/");
-		redir = url.substr(url.find("/"), std::string::npos);
+		handleERROR(obj, 500, eventFD);
+		return;
 	}
-	else if (url.find("http") == 0)
-		redir = url;
-	else
-	{
-		handleERROR(obj, 400, eventFD);
-		return ;
-	}
-	std::string resp = "HTTP/1.1 302 Found\r\nLocation: " + redir + "\r\n" + "Content-Length: 0\r\n\r\n";
+
+	std::string resp;
+	// resp.reserve(128 + redir.size());
+
+	resp += "HTTP/1.1 302 Found\r\n";
+	resp += "Location: ";
+	resp += redir;
+	resp += "\r\n";
+	resp += "Content-Length: 0\r\n";
+	resp += "Connection: close\r\n";
+	resp += "\r\n";
+
+ 	printMsg(resp);
 	send(eventFD, resp.c_str(), resp.size(), 0);
 }
 
