@@ -80,19 +80,12 @@ void Webserv::run()
 					continue;
 				}
 				_clients[client_fd] = Client(client_fd, srv->getConfig());
-				// _clients.insert(std::make_pair(client_fd, Client(client_fd, srv->getConfig())));
 				continue;
 			}
 			if (events[i].events & EPOLLIN)
 			{
-				// std::map<int, Client>::iterator it = _clients.find(fd);
-				// if (it == _clients.end())
-				// 	continue;
-				
 				try
 				{
-					// it->second.readRequest(_epfd, fd, it->second.getConfig());
-					// it->second.sendResponse(_epfd, fd);
 					if (_clients[fd].readRequest(_epfd, fd, _clients[fd].getConfig()))
 						_clients[fd].sendResponse(_epfd, fd);
 				}
@@ -102,16 +95,18 @@ void Webserv::run()
 					_clients.erase(fd);
 					std::cerr << "Client::" << e.what() << '\n';
 				}
-				
 			}
+			if (events[i].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP))
+			{
+				_clients[fd].closeConnection(_epfd);
+				std::cout << "Client Disconnected" << std::endl;
+			}
+			
 		}
 	}
 	std::cout << "\nShutting down gracefully\n" << std::endl;
-	// Close connection to clients
 	for (int it = 0; it < MAX_CONNECTIONS; it++)
-	{
 		_clients[it].closeConnection(_epfd);
-	}
 	close(_epfd);
 }
 
