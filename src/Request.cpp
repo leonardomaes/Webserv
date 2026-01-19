@@ -12,7 +12,7 @@
 
 #include "../inc/Request.hpp"
 
-Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _responseCode(200), _isChunked(false), _isBinary(false), _isRedirect(false)
+Request::Request() : _firstLine(1), _responseCode(200), _isChunked(false), _isBinary(false), _isRedirect(false)
 {
 	// printMsg("Constructor 1");
 	_header["Host"] = "";
@@ -23,6 +23,10 @@ Request::Request() : _method(""), _pathTarget(), _protocol(""), _firstLine(1), _
 	_errorPage[403] = "/error/403.html";
 	_errorPage[404] = "/error/404.html";
 	_errorPage[405] = "/error/405.html";
+	_method = "";
+	_pathTarget = "";
+	_originalPath = "";
+	_protocol = "";
 	_body = "";
 	_root = "";
 	_query = "";
@@ -36,6 +40,7 @@ Request::Request(const Request& obj)
 	// printMsg("Constructor 2");
 	_method = obj._method;
 	_pathTarget = obj._pathTarget;
+	_originalPath = obj._originalPath;
 	_protocol = obj._protocol;
 	_isChunked = obj._isChunked;
 	_isBinary = obj._isBinary;
@@ -57,6 +62,7 @@ Request& Request::operator=(const Request &obj)
 	{
 		this->_method = obj._method;
 		this->_pathTarget = obj._pathTarget;
+		this->_originalPath = obj._originalPath;
 		this->_query = obj._query;
 		this->_redirURL = obj._redirURL;
 		this->_protocol = obj._protocol;
@@ -86,7 +92,7 @@ Request::~Request()
 	
 }
 
-Request::Request(ServerConfig conf) : _method(""), _pathTarget(""), _protocol(""), _firstLine(1),  _responseCode(200), _isChunked(false), _isBinary(false), _isRedirect(false)
+Request::Request(ServerConfig conf) : _firstLine(1),  _responseCode(200), _isChunked(false), _isBinary(false), _isRedirect(false)
 {
 	// printMsg("Constructor 3");
 	_header["Host"] = "";
@@ -106,6 +112,10 @@ Request::Request(ServerConfig conf) : _method(""), _pathTarget(""), _protocol(""
 		_errorPage[it->first].replace(slash, dot - slash, ss.str());
 	}
 	_conf = conf;
+	_method = "";
+	_pathTarget = "";
+	_originalPath = "";
+	_protocol = "";
 	_body = "";
 	_root = "";
 	_query = "";
@@ -121,7 +131,6 @@ int Request::fileOpen(std::string target)
 	std::string filename = this->_root;
 	filename.append(target);
 	std::ifstream file(filename.c_str(), std::ios::in);
-	std::cout << filename << std::endl;
 	if (!file.is_open())
 		return 0;
 	file.close();
@@ -559,13 +568,10 @@ int Request::validLocation(std::string filename)
 			_redirURL = _conf.locations[it_l].redirect;
 		}
 	}
-	std::cout << "Start" << std::endl;
-	std::cout << "Index:" << _locationIndex << std::endl;
 	printMsg("Target>" + _pathTarget + "<");
 	_pathTarget = buildFilesystemPath(locationHasRoot);
 	printMsg("Root >" + _root + "<");
 	printMsg("Target>" + _pathTarget + "<");
-	std::cout << "End" << std::endl;
 	if (!allowed)
 		return 405;
 	if (_isRedirect)
@@ -579,8 +585,6 @@ std::string Request::buildFilesystemPath(bool hasRoot) const
 {
     std::string path = _pathTarget;
 
-	printMsg("FilesysyemPath>" + path + "<");
-	std::cout << hasRoot << std::endl;
     if (hasRoot == true && !_matchedLocation.empty())
     {
         path.erase(0, _matchedLocation.size());
@@ -589,15 +593,11 @@ std::string Request::buildFilesystemPath(bool hasRoot) const
     }
 
     std::string full = path;
-
-	printMsg("FilesysyemPath>" + full + "<");
     if (!full.empty() && full[full.size() - 1] == '/')
     {
         if (!_locationIndex.empty())
             full += _locationIndex;
     }
-
-	printMsg("FilesysyemPath>" + full + "<");
     return full;
 }
 
@@ -646,7 +646,6 @@ int Request::parsePath()
 	else										// Error case
 	{
 		this->_pathTarget = "/error/404.html";
-		std::cout << _responseCode << std::endl;
 		return 404;
 	}
 	return code;
@@ -707,6 +706,7 @@ void Request::parseRequest(std::string buffer)
 		{
 			_responseCode = this->parseFirstLine(line);
 			parseTarget(_pathTarget);
+			_originalPath = _pathTarget;
 			if (_responseCode >= 400)
 				break ;
 			continue;
@@ -737,6 +737,11 @@ std::string Request::getMethod() const
 std::string Request::getPathTarget() const
 {
 	return _pathTarget;
+}
+
+std::string Request::getOriginalPath() const
+{
+	return _originalPath;
 }
 
 std::string Request::getQuery() const

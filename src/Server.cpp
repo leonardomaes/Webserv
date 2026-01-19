@@ -59,7 +59,13 @@ Server::Server(const ServerConfig& conf) : _conf(conf)
 	this->_SocketAddress.sin_family = AF_INET;
 	// Converts port to network byte order
 	this->_SocketAddress.sin_port = htons(std::atoi(conf.listen.c_str()));
-	this->_SocketAddress.sin_addr.s_addr = std::atoi(conf.host.c_str());	// INADDR_ANY (htonl(interface))
+	if (conf.host.empty() || conf.host == "0.0.0.0")
+		this->_SocketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	else
+	{
+		if (inet_pton(AF_INET, conf.host.c_str(), &this->_SocketAddress.sin_addr) != 1)
+			throw ServerException("Invalid host IP address");
+	}
 	// INADDR_LOOPBACK: the local machine’s IP address: localhost, or 127.0.0.1
 	// INADDR_ANY: the IP address 0.0.0.0
 	// INADDR_BROADCAST: the IP address 255.255.255.255

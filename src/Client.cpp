@@ -37,6 +37,13 @@ Client::Client(int fd, ServerConfig conf) : _ClientFD(fd), _request(conf), _resp
 		throw ClientException("Non-Blocking failed");
 }
 
+void Client::logRequest()
+{
+	std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl
+			<< "< Received Request (" << this->_request.getMethod() << " - "
+			<< this->_request.getOriginalPath() << ")" << RESET << std::endl << std::endl;
+}
+
 bool Client::isChunkedRequest(const std::string& buffer)
 {
 	return buffer.find("Transfer-Encoding: chunked") != std::string::npos;
@@ -81,27 +88,20 @@ bool Client::decodeChunkedBody(const std::string& buffer, size_t body_start, std
 		size_t line_end = buffer.find("\r\n", pos);
 		if (line_end == std::string::npos)
 			return false;
-
 		std::string size_str = buffer.substr(pos, line_end - pos);
 		size_t chunk_size = strtoul(size_str.c_str(), NULL, 16);
-
 		pos = line_end + 2;
-
 		if (chunk_size == 0)
 		{
-			// needs \r\n at the end
 			if (buffer.size() < pos + 2)
 				return false;
-
-			consumed = pos + 2; // 0\r\n\r\n
+			consumed = pos + 2;
 			return true;
 		}
-
 		if (buffer.size() < pos + chunk_size + 2)
 			return false;
-
 		out_body.append(buffer, pos, chunk_size);
-		pos += chunk_size + 2; // chunk + \r\n
+		pos += chunk_size + 2;
 	}
 }
 
@@ -110,10 +110,11 @@ bool Client::decodeChunkedBody(const std::string& buffer, size_t body_start, std
 //////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
+bool Client::readRequest(int eventFD, ServerConfig conf)
 {
 	char buffer[4096];
 	ssize_t bytes;
+	bool clientClosed = false;
 	while (true)
 	{
 		bytes = recv(eventFD, buffer, sizeof(buffer), 0);
@@ -124,15 +125,18 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 		}
 		if (bytes == 0)
 		{
-			closeConnection(epfd);
-			return false;
-			// throw ClientException("client disconnected");
+			clientClosed = true;
+			break;
 		}
 		break;
 	}
 	size_t header_end = _recvBuffer.find("\r\n\r\n");
 	if (header_end == std::string::npos)
+	{
+		if (clientClosed)
+			throw ClientException("client disconnected");
 		return false;
+	}
 
 	size_t body_start = header_end + 4;
 	
@@ -143,17 +147,18 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 		size_t consumed = 0;
 
 		if (!decodeChunkedBody(_recvBuffer, body_start, decodedBody, consumed))
+		{
+			if (clientClosed)
+				throw ClientException("client disconnected");
 			return false;
-
+		}
 		std::string full_request = _recvBuffer.substr(0, body_start) + decodedBody;
 
 		_request = Request(conf);
 		_request.parseRequest(full_request);
 
 		_recvBuffer.clear();
-		std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl
-						<< "< Received Request (" << this->_request.getMethod() << " - "
-						<< this->_request.getPathTarget() << ")" << RESET << std::endl;
+		logRequest();
 		printMsg("(START)");
 		// printMsg(full_request);
 		printMsg("(END)");
@@ -164,15 +169,17 @@ bool Client::readRequest(int epfd, int eventFD, ServerConfig conf)
 	size_t content_length = extractContentLength(_recvBuffer);
 	size_t total_size = body_start + content_length;
 	if (_recvBuffer.size() < total_size)
+	{
+		if (clientClosed)
+			throw ClientException("client disconnected");
 		return false;	// Incomplete body
+	}
 	this->_request = Request(conf);
 	this->_request.parseRequest(_recvBuffer);
-	std::cout << GREEN << "### " << _conf.listen << " ###" << std::endl
-					<< "< Received Request (" << this->_request.getMethod() << " - "
-					<< this->_request.getPathTarget() << ")" << RESET << std::endl;
 	printMsg("(START)");
 	// printMsg(_recvBuffer);
 	printMsg("(END)");
+	logRequest();
 	_recvBuffer.clear();
 	
 	return true;
@@ -183,11 +190,6 @@ void Client::sendResponse(int epfd, int eventFD)
 	this->_response = Response();
 	// printMsg("Body(test):" + this->_request.getBody() + "<");
 	this->_response.generateResponse(this->_request, epfd, eventFD);
-	if (_request.getConnection() != "keep-alive")
-	{
-		closeConnection(epfd);
-	}
-	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -203,6 +205,11 @@ int Client::getClientFD()
 ServerConfig Client::getConfig()
 {
 	return this->_conf;
+}
+
+bool Client::isKeepAlive()
+{
+	return (this->_request.getConnection() == "keep-alive");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

@@ -23,6 +23,7 @@ class Request
 		// Request info
 		std::string		_method;
 		std::string		_pathTarget;
+		std::string		_originalPath;
 		std::string		_query;
 		std::map<std::string, std::string> _queryContent;
 		std::string		_protocol;
@@ -88,6 +89,7 @@ class Request
 		// Getters
 		std::string			getMethod() const;
 		std::string			getPathTarget() const;
+		std::string			getOriginalPath() const;
 		std::string			getQuery() const;
 		std::string			getProtocol() const;
 		std::string			getRoot() const;

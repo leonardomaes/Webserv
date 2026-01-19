@@ -29,6 +29,7 @@ class Response
 		typedef void (Response::*MethodHandler)(const Request&, int);
 		
 		// Member Functions
+		void					logResponse(const Request& obj);
 		void					handleGET(const Request& obj, int eventFD);
 		void					handlePOST(const Request& obj, int eventFD);
 		bool					isDELETEAllowed(const Request& obj);

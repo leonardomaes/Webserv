@@ -137,6 +137,17 @@ std::string Response::defaultErrorPage(int error)
 	return ss.str();
 }
 
+void Response::logResponse(const Request& obj)
+{
+if (obj.getCode() >= 400)
+			std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
+						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		else
+			std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
+						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		
+}
+
 std::string Response::getContent(std::string filename)
 {
 	std::string result;
@@ -145,7 +156,7 @@ std::string Response::getContent(std::string filename)
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
 	{
-		std::cout << "LOG:: " << RED << "Couldn't open target file; (Response::getContent)\n" << RESET;
+		std::cout << "LOG:: " << RED << "Couldn't open target file; (Response::getContent)\n\n" << RESET;
 		return "";
 	}
 	
@@ -427,7 +438,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 	}
 	else
 	{
-		std::cout << "LOG:: " << RED << "Couldn't open error file, generating default error page (Response::handleERROR)\n" << RESET;
+		std::cout << "LOG:: " << RED << "Couldn't open error file, generating default error page (Response::handleERROR)\n\n" << RESET;
 		body = defaultErrorPage(error);
 	}
 
@@ -538,12 +549,7 @@ void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	if (obj.isRedir())
 	{
 		handleRedirect(obj, eventFD);
-		if (obj.getCode() >= 400)
-			std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
-						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
-		else
-			std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
-						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		logResponse(obj);
 		return ;
 	}
 	
@@ -569,12 +575,7 @@ void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 			epoll_ctl(epfd, EPOLL_CTL_DEL, eventFD, NULL);
 			close(eventFD);
 		}
-		if (obj.getCode() >= 400)
-			std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
-						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
-		else
-			std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
-						<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+		logResponse(obj);
 		return;
 	}
 
@@ -601,12 +602,7 @@ void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 		// Check line, if "Connection: keep-alive", we must not close it
 		close(eventFD);
 	}
-	if (obj.getCode() >= 400)
-		std::cout << RED << "### " << obj.getConfig()->listen << " ###" << std::endl << "> Sended Response (" << obj.getCode() << " - "
-					<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
-	else
-		std::cout << GREEN  << "### " <<  obj.getConfig()->listen << " ###" << std::endl <<  "> Sended Response (" << obj.getCode() << " - "
-					<< this->_status[obj.getCode()] << ")" << RESET << std::endl << std::endl;		// LOG
+	logResponse(obj);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -663,7 +659,7 @@ std::string Response::generateDirectoryHTML(const std::string &dirPath, const st
 	DIR* dir = opendir(dirPath.c_str());
 	if (!dir)
 	{
-		std::cerr << "LOG:: " << RED << "Failed to open directory: " << dirPath << RESET << std::endl;
+		std::cerr << "LOG:: " << RED << "Failed to open directory: " << dirPath << RESET << std::endl << std::endl;
 		return "";
 	}
 

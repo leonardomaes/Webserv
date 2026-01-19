@@ -29,10 +29,10 @@ class Client
 		ServerConfig _conf;
 		
 		// Functions
-		size_t extractContentLength(const std::string& buffer);
-		bool isChunkedRequest(const std::string& buffer);
-		bool decodeChunkedBody(const std::string& buffer, size_t body_start, std::string& out_body, size_t& consumed);
-	
+		size_t	extractContentLength(const std::string& buffer);
+		bool	isChunkedRequest(const std::string& buffer);
+		bool	decodeChunkedBody(const std::string& buffer, size_t body_start, std::string& out_body, size_t& consumed);
+		void	logRequest();
 	public:
 		Client();
 		Client(const Client& obj);
@@ -44,9 +44,10 @@ class Client
 		ServerConfig getConfig();
 
 		// Functions
-		bool readRequest(int epfd, int eventFD, ServerConfig conf);
+		bool readRequest(int eventFD, ServerConfig conf);
 		void sendResponse(int epfd,  int eventFD);
 		void closeConnection(int epfd);
+		bool	isKeepAlive();
 
 		// Exception
 		class ClientException : public std::exception {

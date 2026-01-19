@@ -51,18 +51,16 @@ void Webserv::run()
 		for (int i = 0; i < eventsReady; i++)
 		{
 			int fd = events[i].data.fd;
-			bool isServerSocket = false;
 			Server* srv = NULL;
 			for (size_t s = 0; s < _servers.size(); s++)
 			{
 				if (_servers[s]->getSocketFD() == fd)
 				{
-					isServerSocket = true;
 					srv = _servers[s];
 					break;
 				}
 			}
-			if (isServerSocket)
+			if (srv)
 			{
 				int client_fd = srv->acceptClient();
 				if (client_fd < 0)
@@ -72,7 +70,7 @@ void Webserv::run()
 				// EPOLLET - Each trigger remove the actual event
 				struct epoll_event ev;
 				memset(&ev, 0, sizeof(ev));
-				ev.events = EPOLLIN;
+				ev.events = EPOLLIN | EPOLLRDHUP;
 				ev.data.fd = client_fd;
 				if (epoll_ctl(_epfd, EPOLL_CTL_ADD, client_fd, &ev) == -1)
 				{ 
@@ -80,26 +78,38 @@ void Webserv::run()
 					continue;
 				}
 				_clients[client_fd] = Client(client_fd, srv->getConfig());
+				// std::cout << "New Client Connection" << std::endl;
+				continue;
+			}
+			if (events[i].events & (EPOLLERR | EPOLLHUP))
+			{
+				_clients[fd].closeConnection(_epfd);
+				_clients.erase(fd);
+				// std::cerr << "Client::" << "Client disconnected" << '\n';
 				continue;
 			}
 			if (events[i].events & EPOLLIN)
 			{
 				try
 				{
-					if (_clients[fd].readRequest(_epfd, fd, _clients[fd].getConfig()))
+					if (_clients[fd].readRequest(fd, _clients[fd].getConfig()))
 						_clients[fd].sendResponse(_epfd, fd);
 				}
 				catch(const std::exception& e)
 				{
 					_clients[fd].closeConnection(_epfd);
 					_clients.erase(fd);
-					std::cerr << "Client::" << e.what() << '\n';
+					// std::cerr << "Client::" << e.what() << '\n';
 				}
 			}
-			if (events[i].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP))
+			if (events[i].events & EPOLLRDHUP)
 			{
-				_clients[fd].closeConnection(_epfd);
-				std::cout << "Client Disconnected" << std::endl;
+				if (!_clients[fd].isKeepAlive())
+				{
+					_clients[fd].closeConnection(_epfd);
+					// std::cerr << "Client::" << "Client disconnected" << '\n';
+					_clients.erase(fd);
+				}
 			}
 			
 		}
