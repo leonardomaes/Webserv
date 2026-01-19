@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/18 00:22:28 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:25:15 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ void Webserv::run()
 		int eventsReady = epoll_wait(_epfd, events, MAX_EVENTS, -1);
 		if (eventsReady < 0)
 		{
-			if (errno == EINTR) //RM: if interrupted by a signal, ignore and go to the beggining of the loop (calling epoll_wait)
+			if (errno == EINTR) // if interrupted by a signal, ignore and go to the beggining of the loop (calling epoll_wait)
 				continue;
 			else
 				throw std::runtime_error("epoll_wait failed");

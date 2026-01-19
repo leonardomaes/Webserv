@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/19 09:58:15 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:25:20 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,6 @@
 #define MAX_CONNECTIONS 16
 #define BUFFER_SIZE 4096
 #define PORT 8080
-#define DBG_MSG 1
+#define DBG_MSG 0
 #define DBG_COLOR CYAN
 

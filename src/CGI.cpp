@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/19 10:38:12 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:17:19 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,92 +60,6 @@ char** CGI::getEnvAsArray() const
     env[i] = NULL;
     return (env);
 }
-
-/* std::string CGI::execute(const Request& request)
-{
-    initializeEnv(request);
-    
-    int pipe_in[2];     // Server -> CGI (stdin)
-    int pipe_out[2];    // CGI -> Server (stdout)
-
-    if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
-        throw std::runtime_error("Pipe failed on CGI");
-
-    pid_t pid = fork();
-    if (pid == -1)
-        throw std::runtime_error("Fork failed on CGI");
-
-    // child process
-    if (pid == 0)
-    {
-        close(pipe_in[1]);                  // close pipe in write end as child does not write to stdin
-        close(pipe_out[0]);                 // close pipe out read end as child does not read from stdout
-
-        dup2(pipe_in[0], STDIN_FILENO);     // redirect stdin
-        dup2(pipe_out[1], STDOUT_FILENO);   // redirect stdout
-
-        close(pipe_in[0]);                  // safe practice
-        close(pipe_out[1]);                 // safe practice
-
-        // preparing execve args and running it
-        char *args[] = 
-        {
-            const_cast<char *>(_interpreterPath.c_str()),
-            const_cast<char *>(_scriptPath.c_str()),
-            NULL
-        };
-        char ** envp = getEnvAsArray();
-        execve(args[0], args, envp);
-        exit(1);    // execve failed
-    }
-    else    // parent process
-    {
-        close(pipe_in[0]);  // parent does not need to read stdin
-        close(pipe_out[1]); // parent does not need to write stdout
-
-        // send POST body to CGI if exists
-        if (request.getMethod() == "POST")
-            write(pipe_in[1], request.getBody().c_str(), request.getBody().size());
-        close(pipe_in[1]);
-
-        // setup select for timeout
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        FD_SET(pipe_out[0], &read_fds);
-        
-        struct timeval timeout;
-        timeout.tv_sec = 5;  // 5 seconds timeout
-        timeout.tv_usec = 0;
-
-        // wait until data available or timeout
-        int ret = select(pipe_out[0] + 1, &read_fds, NULL, NULL, &timeout);
-
-        if (ret == -1) 
-        {
-            kill(pid, SIGKILL);
-            waitpid(pid, NULL, 0);
-            close(pipe_out[0]);
-            throw std::runtime_error("Select failed");
-        }
-        else if (ret == 0)           // TIMEOUT REACHED
-        {
-            kill(pid, SIGKILL);      // kill the script
-            waitpid(pid, NULL, 0);   // cleanup zombie process
-            close(pipe_out[0]);
-            throw std::runtime_error("CGI Timeout");
-        }
-
-        // read output
-        char buffer[4096];
-        std::string result;
-        ssize_t bytesRead;
-        while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
-            result.append(buffer, bytesRead);
-        close(pipe_out[0]);
-        waitpid(pid, NULL, 0);      // wait for child
-        return (result);
-    }
-} */
 
 std::string CGI::execute(const Request& request)
 {

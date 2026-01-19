@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:25:57 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/19 09:51:26 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:15:45 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ class Request
 		std::string			getHeaderContent(std::string key) const;
 		std::string			getBodyContent(std::string key) const;
 		const std::string	getErrorPage(int error) const;
-		const ServerConfig	*getConfig() const;	// RN: need to add this getter here to access the config info
+		const ServerConfig	*getConfig() const;
 		bool isMultipart() const;
 		bool isChunked() const;
 		bool isImage() const;

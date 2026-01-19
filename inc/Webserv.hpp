@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 17:08:50 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/19 09:56:41 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:16:49 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ class Webserv
 		int							_epfd;
 		std::vector<Server*>		_servers;
 		std::map<int, Client>		_clients;
-		// Config*						_config;
+
 	public:
 		Webserv(Config* config);
 		~Webserv();

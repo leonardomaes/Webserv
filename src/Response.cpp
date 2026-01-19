@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:24:27 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/16 01:23:20 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:24:06 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,7 +137,7 @@ std::string Response::defaultErrorPage(int error)
 	return ss.str();
 }
 
-std::string Response::getContent(std::string filename)	// Add dynamic error based in http code (TO DO)
+std::string Response::getContent(std::string filename)
 {
 	std::string result;
 	std::string path = this->getRoot() + filename;
@@ -310,7 +310,7 @@ void Response::handlePOST(const Request& obj, int eventFD)
         return;
     }
 
-	std::string header = this->getStatus(obj);					// Make it dynamic (TO DO)
+	std::string header = this->getStatus(obj);					
 	std::string responseBody;
 	if (obj.isMultipart())
 		responseBody = getContent("/html/upload_success.html");

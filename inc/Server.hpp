@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/06 19:36:46 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/19 09:55:18 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 16:16:28 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ class Server
 	private:
 		int _SocketFD;
 		ServerConfig _conf;
-		// Client _clients[MAX_CONNECTIONS];
 		struct sockaddr_in _SocketAddress;
 	
 	public:
@@ -32,7 +31,6 @@ class Server
 		~Server();
 
 		// Functions
-		// Server(int port, u_long interface);
 		Server(const ServerConfig& conf);
 		void Start(Config *conf);
 		int acceptClient() const;
