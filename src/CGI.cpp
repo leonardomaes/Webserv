@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/18 00:16:07 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/19 10:38:12 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ char** CGI::getEnvAsArray() const
     return (env);
 }
 
-std::string CGI::execute(const Request& request)
+/* std::string CGI::execute(const Request& request)
 {
     initializeEnv(request);
     
@@ -145,4 +145,95 @@ std::string CGI::execute(const Request& request)
         waitpid(pid, NULL, 0);      // wait for child
         return (result);
     }
+} */
+
+std::string CGI::execute(const Request& request)
+{
+    initializeEnv(request);
+    
+    int pipe_in[2];     // Server -> CGI (stdin)
+    int pipe_out[2];    // CGI -> Server (stdout)
+
+    if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
+        throw std::runtime_error("Pipe failed on CGI");
+
+    pid_t pid = fork();
+    if (pid == -1)
+        throw std::runtime_error("Fork failed on CGI");
+
+    // child process
+    if (pid == 0)
+    {
+        close(pipe_in[1]);                  // close pipe in write end as child does not write to stdin
+        close(pipe_out[0]);                 // close pipe out read end as child does not read from stdout
+
+        dup2(pipe_in[0], STDIN_FILENO);     // redirect stdin
+        dup2(pipe_out[1], STDOUT_FILENO);   // redirect stdout
+
+        close(pipe_in[0]);                  // safe practice
+        close(pipe_out[1]);                 // safe practice
+
+        // preparing execve args and running it
+        char *args[] = 
+        {
+            const_cast<char *>(_interpreterPath.c_str()),
+            const_cast<char *>(_scriptPath.c_str()),
+            NULL
+        };
+        char ** envp = getEnvAsArray();
+        execve(args[0], args, envp);
+        exit(1);    // execve failed
+    }
+    else    // parent process
+    {
+        close(pipe_in[0]);  // parent does not need to read stdin
+        close(pipe_out[1]); // parent does not need to write stdout
+
+        // send POST body to CGI if exists
+        if (request.getMethod() == "POST")
+            write(pipe_in[1], request.getBody().c_str(), request.getBody().size());
+        close(pipe_in[1]);
+
+        // wait with timeout
+        int status;
+        pid_t result = 0;
+        int timeout_sec = 5; 
+        time_t start = time(NULL);
+
+        while (difftime(time(NULL), start) < timeout_sec) 
+        {
+            result = waitpid(pid, &status, WNOHANG); // check if child finished
+            
+            if (result > 0) 
+                break;  // Child finished successfully
+            if (result == -1) 
+                throw std::runtime_error("Waitpid error");   // Error in waitpid         
+            usleep(10000); // sleep 10ms to avoid busy waiting
+        }
+
+        // handle timeout
+        if (result == 0) 
+        {
+            kill(pid, SIGKILL);    // timeout reached: kills the process
+            waitpid(pid, NULL, 0); // cleanup zombie
+            close(pipe_out[0]);    // close read end
+            throw std::runtime_error("CGI Timeout");
+        }
+
+        // read output
+        char buffer[4096];
+        std::string resultStr;
+        ssize_t bytesRead;
+        while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+            resultStr.append(buffer, bytesRead);
+        close(pipe_out[0]);
+        waitpid(pid, NULL, 0);      // wait for child
+
+        // check if child exited with error
+        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) 
+             std::cerr << "CGI exited with error status: " << WEXITSTATUS(status) << std::endl;
+
+        return (resultStr);
+    }
 }
+
