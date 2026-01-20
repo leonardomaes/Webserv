@@ -335,7 +335,8 @@ void Response::handlePOST(const Request& obj, int eventFD)
 
 bool Response::isDELETEAllowed(const Request& obj)
 {
-	const LocationConfig *loc = getLocationConfig(obj);
+	// const LocationConfig *loc = getLocationConfig(obj);
+	const LocationConfig *loc = obj.getLocation();
 
 	if (!loc)			// if no location was found
 		return (false);
@@ -507,10 +508,8 @@ void Response::handleCGI(const Request& obj, const LocationConfig* loc, int even
 
 	// building the absolute path for the script
 	std::string scriptPath = this->getRoot() + obj.getPathTarget();
-
 	// create the CGI object
 	CGI cgi(scriptPath, loc->cgi_path); // this is the cgi interpreter like /usr/bin/python3
-
 	try
 	{
 		std::string cgiOutput = cgi.execute(obj);
@@ -587,7 +586,8 @@ void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	dbg_ss << obj.getCode() << " (code)";
 	printMsg(dbg_ss.str());
 	// get the location that mathes this request
-	const LocationConfig *loc = getLocationConfig(obj);
+	// const LocationConfig *loc = getLocationConfig(obj);
+	const LocationConfig *loc = obj.getLocation();
 
 	// check if this is a CGI request (location exists + CGI enabled + file extension)
 	std::string path = obj.getPathTarget();
@@ -595,6 +595,14 @@ void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 	size_t dotPos = path.find_last_of(".");
 	if (dotPos != std::string::npos)
 		ext = path.substr(dotPos);
+	if (loc)
+	{
+		std::cout << loc->path << std::endl;
+		std::cout << ext << std::endl;
+		std::cout << loc->cgi_ext << std::endl;
+		std::cout << loc->has_cgi << std::endl;
+	}
+	
 	if (loc && loc->has_cgi && loc->cgi_ext == ext)
 	{
 		handleCGI(obj, loc, eventFD);
@@ -640,7 +648,9 @@ void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 bool Response::isAutoIndexEnabled(const Request &obj)
 {
 	// grab the similar location config
-	const LocationConfig *loc = getLocationConfig(obj); 
+	// const LocationConfig *loc = getLocationConfig(obj);
+	const LocationConfig *loc = obj.getLocation();
+
 
 	// if we found a matching location, return the auto_index value
 	if (loc)

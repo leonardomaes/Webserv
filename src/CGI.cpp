@@ -64,7 +64,7 @@ char** CGI::getEnvAsArray() const
 std::string CGI::execute(const Request& request)
 {
     initializeEnv(request);
-    
+
     int pipe_in[2];     // Server -> CGI (stdin)
     int pipe_out[2];    // CGI -> Server (stdout)
 
@@ -74,7 +74,6 @@ std::string CGI::execute(const Request& request)
     pid_t pid = fork();
     if (pid == -1)
         throw std::runtime_error("Fork failed on CGI");
-
     // child process
     if (pid == 0)
     {
@@ -105,13 +104,15 @@ std::string CGI::execute(const Request& request)
 
         // send POST body to CGI if exists
         if (request.getMethod() == "POST")
+		{
             write(pipe_in[1], request.getBody().c_str(), request.getBody().size());
+		}
         close(pipe_in[1]);
 
         // wait with timeout
         int status;
         pid_t result = 0;
-        int timeout_sec = 5; 
+        int timeout_sec = 60; 
         time_t start = time(NULL);
 
         while (difftime(time(NULL), start) < timeout_sec) 

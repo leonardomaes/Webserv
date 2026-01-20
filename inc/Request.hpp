@@ -45,6 +45,7 @@ class Request
 
 		// Objs
 		ServerConfig	_conf;
+		LocationConfig	_loc;
 
 		// ...
 		int				fileOpen(std::string filename);
@@ -102,6 +103,7 @@ class Request
 		std::string			getBodyContent(std::string key) const;
 		const std::string	getErrorPage(int error) const;
 		const ServerConfig	*getConfig() const;
+		const LocationConfig *getLocation() const;
 		bool isMultipart() const;
 		bool isChunked() const;
 		bool isImage() const;

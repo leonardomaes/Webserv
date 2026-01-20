@@ -539,6 +539,7 @@ int Request::validLocation(std::string filename)
 	}
 	else
 	{
+		_loc = _conf.locations[it_l];
 		printMsg("Location Founded: " + _conf.locations[it_l].path);
 		// Check in the location for the ALLOWED METHODS
 		for (size_t i = 0; i < _conf.locations[it_l].allow_methods.size(); i++)
@@ -588,7 +589,7 @@ std::string Request::buildFilesystemPath(bool hasRoot) const
 	{
 		path.erase(0, _matchedLocation.size());
 		if (path.size() > 2 && path[path.size() - 1] == '/')
-			path.erase(path[path.size() - 1]);
+			path.erase(path.size() - 1);
 	}
 	std::string full = path;
 	struct stat entryStat;
@@ -650,7 +651,7 @@ int Request::parsePath()
 	return code;
 }
 
-void Request::parseBody(std::string &buffer, size_t header_end)
+void Request::parseBody(std::string &buffer, size_t header_end)		// Check (loc && loc->has_cgi && loc->cgi_ext == ext) to see if it is a CGI
 {
 	if (header_end == std::string::npos)
 		return;
@@ -815,6 +816,11 @@ std::string Request::getBody() const
 const ServerConfig *Request::getConfig() const
 {
 	return &_conf;
+}
+
+const LocationConfig *Request::getLocation() const
+{
+	return &_loc;
 }
 
 bool Request::isMultipart() const
