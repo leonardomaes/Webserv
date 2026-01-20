@@ -151,7 +151,9 @@ bool Config::parseConfig()
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Config parse error: " << e.what() << std::endl;
+		std::stringstream ss;
+		ss << e.what();
+		throw std::runtime_error("Config parse error: " + ss.str());
     }
     return (true);
 }

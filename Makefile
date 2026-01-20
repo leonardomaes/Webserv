@@ -45,7 +45,6 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BIN_DIR)
 
 $(BIN_DIR):
 			mkdir -p $(BIN_DIR)
-			mkdir -p $(BIN_DIR)/Response
 
 leaks: $(NAME)
 		$(VAL)

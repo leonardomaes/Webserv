@@ -93,6 +93,7 @@ class Request
 		std::string			getQuery() const;
 		std::string			getProtocol() const;
 		std::string			getRoot() const;
+		std::string			getIndex() const;
 		std::string			getConnection() const;
 		std::string			getRedir() const;
 		std::string			getBody() const;

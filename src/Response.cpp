@@ -151,8 +151,8 @@ if (obj.getCode() >= 400)
 std::string Response::getContent(std::string filename)
 {
 	std::string result;
-	std::string path = this->getRoot() + filename;
-	printMsg(path + " (path)");
+	std::string path = filename;
+	printMsg(path + " (path::getContent)");
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (!file.is_open())
 	{
@@ -247,7 +247,7 @@ void Response::handleGET(const Request& obj, int eventFD)
 		std::string indexPath = fullPath;
 		if (!indexPath.empty() && indexPath[indexPath.length() - 1] != '/')
 			indexPath += "/";
-		indexPath += "index.html";
+		indexPath += "index.html";	// TO DO
 		
 		struct stat indexStat;
 		printMsg("DEBUG: Checking directory stat for: " + fullPath);
@@ -276,9 +276,10 @@ void Response::handleGET(const Request& obj, int eventFD)
 		}			
 
 	}
-	
+
+	printMsg(fullPath + " (fullPath)");
 	std::string header = this->getStatus(obj);
-	std::string body = this->getContent(obj.getPathTarget());
+	std::string body = this->getContent(fullPath);
 	printMsg(header + " (header)");
 	respond(header, body, eventFD);
 }
@@ -324,9 +325,9 @@ void Response::handlePOST(const Request& obj, int eventFD)
 	std::string header = this->getStatus(obj);					
 	std::string responseBody;
 	if (obj.isMultipart())
-		responseBody = getContent("/html/upload_success.html");
+		responseBody = getContent(obj.getConfig()->root + "/html/upload_success.html");
 	else	
-		responseBody = getContent("/html/post_success.html");
+		responseBody = getContent(obj.getConfig()->root + "/html/post_success.html");
 	// printMsg(header);
 	// printMsg(body);
 	respond(header, responseBody, eventFD);
@@ -415,7 +416,7 @@ void Response::handleDELETE(const Request& obj, int eventFD)
 
 	// return a response (200 OK header and not 204 to allow the use of the delete.html)
 	std::string header = "HTTP/1.1 200 OK\r\n";
-	std::string body = getContent("/html/delete_success.html");  // this allow the redirection into delete_sucess.html
+	std::string body = getContent(obj.getConfig()->root + "/html/delete_success.html");  // this allow the redirection into delete_sucess.html
 	respond(header, body, eventFD);
 }
 
@@ -428,6 +429,7 @@ void Response::handleERROR(const Request& obj, int error, int eventFD)
 
 	std::string body;
 	std::string path = getRoot() + "/" + obj.getErrorPage(error);
+	std::cout << path << std::endl;
 	std::ifstream file(path.c_str(), std::ios::in);
 	if (file.is_open())
 	{
@@ -571,6 +573,7 @@ void Response::handleRedirect(const Request& obj, int eventFD)
 // Response starts here
 void	Response::generateResponse(const Request& obj, int epfd, int eventFD)
 {
+	printMsg("Teste:" + obj.getPathTarget());
 	if (obj.isRedir())
 	{
 		handleRedirect(obj, eventFD);

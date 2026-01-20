@@ -109,7 +109,8 @@ Request::Request(ServerConfig conf) : _firstLine(1),  _responseCode(200), _isChu
 		std::stringstream ss;
 		ss << it->first;
 		_errorPage[it->first] = it->second;
-		_errorPage[it->first].replace(slash, dot - slash, ss.str());
+		if (it->second.find("x.html") != std::string::npos)
+			_errorPage[it->first].replace(slash, dot - slash, ss.str());
 	}
 	_conf = conf;
 	_method = "";
@@ -557,20 +558,18 @@ int Request::validLocation(std::string filename)
 		else
 			_root = _conf.root;
 		_matchedLocation = _conf.locations[it_l].path;
-		printMsg("Location index:" + _conf.locations[it_l].index);
 		if (_conf.locations[it_l].index != "")
 			_locationIndex = _conf.locations[it_l].index;
-		else
-			_locationIndex = _conf.index;
 		if (!_conf.locations[it_l].redirect.empty())
 		{
 			_isRedirect = true;
 			_redirURL = _conf.locations[it_l].redirect;
 		}
 	}
-	printMsg("Target>" + _pathTarget + "<");
-	_pathTarget = buildFilesystemPath(locationHasRoot);
 	printMsg("Root >" + _root + "<");
+	printMsg("Target>" + _pathTarget + "<");
+	printMsg("index:" + _locationIndex);
+	_pathTarget = buildFilesystemPath(locationHasRoot);
 	printMsg("Target>" + _pathTarget + "<");
 	if (!allowed)
 		return 405;
@@ -583,22 +582,22 @@ int Request::validLocation(std::string filename)
 
 std::string Request::buildFilesystemPath(bool hasRoot) const
 {
-    std::string path = _pathTarget;
+	std::string path = _pathTarget;
 
-    if (hasRoot == true && !_matchedLocation.empty())
-    {
-        path.erase(0, _matchedLocation.size());
-        if (path.empty())
-            path = "/";
-    }
-
-    std::string full = path;
-    if (!full.empty() && full[full.size() - 1] == '/')
-    {
-        if (!_locationIndex.empty())
-            full += _locationIndex;
-    }
-    return full;
+	if (hasRoot == true && !_matchedLocation.empty())
+	{
+		path.erase(0, _matchedLocation.size());
+		if (path.size() > 2 && path[path.size() - 1] == '/')
+			path.erase(path[path.size() - 1]);
+	}
+	std::string full = path;
+	struct stat entryStat;
+	if (stat((_root + full).c_str(), &entryStat) == 0)
+	{
+		if (S_ISDIR(entryStat.st_mode) && !_locationIndex.empty())
+			full += "/" + _locationIndex;
+	}
+	return full;
 }
 
 
@@ -637,7 +636,7 @@ int Request::parsePath()
 		else
 		{
 			printMsg("DELETE target not found: " + fullPath);
-			this->_pathTarget = "/error/404.html";
+			// this->_pathTarget = "/error/404.html";
 			return 404;
 		}
 	}
@@ -645,7 +644,7 @@ int Request::parsePath()
 		return code;
 	else										// Error case
 	{
-		this->_pathTarget = "/error/404.html";	// DELETE
+		// this->_pathTarget = "/error/404.html";	// DELETE
 		return 404;
 	}
 	return code;
@@ -762,6 +761,11 @@ int Request::getCode() const
 std::string Request::getRoot() const
 {
 	return _root;
+}
+
+std::string Request::getIndex() const
+{
+	return _locationIndex;
 }
 
 std::string Request::getConnection() const
