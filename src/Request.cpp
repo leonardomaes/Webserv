@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/16 02:08:45 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/22 00:23:39 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ Request::Request(const Request& obj)
 	_responseCode = obj._responseCode;
 	_errorPage = obj._errorPage;
 	_conf = obj._conf;
+	_loc = obj._loc;
 	_root = obj._root;
 	_query = obj._query;
 	_redirURL = obj._redirURL;
@@ -83,6 +84,7 @@ Request& Request::operator=(const Request &obj)
 		this->_locationIndex = obj._locationIndex;
 
 		this->_conf = obj._conf;
+		this->_loc = obj._loc;
 	}
 	return *this;
 }
