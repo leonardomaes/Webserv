@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:22:39 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/19 09:46:01 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/22 10:20:49 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <fcntl.h>
 
 class CGI
 {
