@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/19 16:17:19 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/22 10:09:42 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,7 @@ std::string CGI::execute(const Request& request)
     pid_t pid = fork();
     if (pid == -1)
         throw std::runtime_error("Fork failed on CGI");
+    
     // child process
     if (pid == 0)
     {
@@ -104,51 +105,63 @@ std::string CGI::execute(const Request& request)
 
         // send POST body to CGI if exists
         if (request.getMethod() == "POST")
-		{
             write(pipe_in[1], request.getBody().c_str(), request.getBody().size());
-		}
         close(pipe_in[1]);
 
-        // wait with timeout
+        // set pipe to non-blocking mode
+        int flags = fcntl(pipe_out[0], F_GETFL, 0);
+        fcntl(pipe_out[0], F_SETFL, flags | O_NONBLOCK);
+
+        // read while waiting for child to finish
         int status;
         pid_t result = 0;
-        int timeout_sec = 60; 
+        int timeout_sec = 5; 
         time_t start = time(NULL);
 
-        while (difftime(time(NULL), start) < timeout_sec) 
-        {
-            result = waitpid(pid, &status, WNOHANG); // check if child finished
-            
-            if (result > 0) 
-                break;  // Child finished successfully
-            if (result == -1) 
-                throw std::runtime_error("Waitpid error");   // Error in waitpid         
-            usleep(10000); // sleep 10ms to avoid busy waiting
-        }
-
-        // handle timeout
-        if (result == 0) 
-        {
-            kill(pid, SIGKILL);    // timeout reached: kills the process
-            waitpid(pid, NULL, 0); // cleanup zombie
-            close(pipe_out[0]);    // close read end
-            throw std::runtime_error("CGI Timeout");
-        }
-
-        // read output
         char buffer[4096];
         std::string resultStr;
         ssize_t bytesRead;
-        while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
-            resultStr.append(buffer, bytesRead);
+
+        while (difftime(time(NULL), start) < timeout_sec) 
+        {
+            // try to read available data (non-blocking)
+            while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+                resultStr.append(buffer, bytesRead);
+            
+            // bytesRead == -1 with errno == EAGAIN/EWOULDBLOCK means no data available
+            // bytesRead == 0 means EOF (child closed pipe)
+            
+            // check if child finished
+            result = waitpid(pid, &status, WNOHANG);
+            
+            if (result > 0)
+            {
+                // child finished - read any remaining data
+                while ((bytesRead = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+                    resultStr.append(buffer, bytesRead);
+                    
+                close(pipe_out[0]);
+                
+                if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+                    std::cerr << "CGI exited with error status: " << WEXITSTATUS(status) << std::endl;
+                
+                return resultStr;
+            }
+            
+            if (result == -1)
+            {
+                close(pipe_out[0]);
+                throw std::runtime_error("Waitpid error");
+            }
+            
+            usleep(10000); // sleep 10ms to avoid busy waiting
+        }
+
+        // Timeout reached
+        kill(pid, SIGKILL);
+        waitpid(pid, NULL, 0);
         close(pipe_out[0]);
-        waitpid(pid, NULL, 0);      // wait for child
-
-        // check if child exited with error
-        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) 
-             std::cerr << "CGI exited with error status: " << WEXITSTATUS(status) << std::endl;
-
-        return (resultStr);
+        throw std::runtime_error("CGI Timeout");
     }
 }
 
