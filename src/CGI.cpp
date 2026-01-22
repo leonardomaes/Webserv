@@ -6,7 +6,7 @@
 /*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/11 20:21:47 by rda-cunh          #+#    #+#             */
-/*   Updated: 2026/01/22 10:09:42 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/22 11:10:11 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,12 @@ std::string CGI::execute(const Request& request)
 {
     initializeEnv(request);
 
+    // ADD DEBUG LOGGING
+    std::cerr << "=== CGI DEBUG ===" << std::endl;
+    std::cerr << "Script path: " << _scriptPath << std::endl;
+    std::cerr << "Interpreter path: " << _interpreterPath << std::endl;
+    std::cerr << "Request method: " << request.getMethod() << std::endl;
+
     int pipe_in[2];     // Server -> CGI (stdin)
     int pipe_out[2];    // CGI -> Server (stdout)
 
@@ -83,6 +89,14 @@ std::string CGI::execute(const Request& request)
 
         dup2(pipe_in[0], STDIN_FILENO);     // redirect stdin
         dup2(pipe_out[1], STDOUT_FILENO);   // redirect stdout
+
+        // Redirect stderr to see CGI errors
+        int err_fd = open("/tmp/cgi_stderr.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if (err_fd >= 0)
+        {
+            dup2(err_fd, STDERR_FILENO);
+            close(err_fd);
+        }
 
         close(pipe_in[0]);                  // safe practice
         close(pipe_out[1]);                 // safe practice
@@ -145,6 +159,11 @@ std::string CGI::execute(const Request& request)
                 if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
                     std::cerr << "CGI exited with error status: " << WEXITSTATUS(status) << std::endl;
                 
+                // After reading the result, ADD THIS DEBUG:
+                std::cerr << "CGI output length: " << resultStr.length() << " bytes" << std::endl;
+                std::cerr << "CGI output (first 200 chars): " << resultStr.substr(0, 200) << std::endl;
+                std::cerr << "=================\n" << std::endl;    
+
                 return resultStr;
             }
             
