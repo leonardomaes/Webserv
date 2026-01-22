@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rda-cunh <rda-cunh@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: rda-cunh <rda-cunh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:26:07 by lmaes             #+#    #+#             */
-/*   Updated: 2026/01/22 00:23:39 by rda-cunh         ###   ########.fr       */
+/*   Updated: 2026/01/22 10:47:37 by rda-cunh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -684,10 +684,11 @@ void Request::parseBody(std::string &buffer, size_t header_end)		// Check (loc &
 		postFormFile();
 	else if (content_type.find("multipart/form-data") != std::string::npos)
 		postMultipartFile();
-	else if (_isBinary)
-		postBinaryFile();
 	else
-		_responseCode = 415;
+	{
+		if (!content_type.empty())		// unknown content type is considered binary
+			postBinaryFile();
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
