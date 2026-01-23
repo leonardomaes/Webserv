@@ -247,7 +247,7 @@ void Response::handleGET(const Request& obj, int eventFD)
 		std::string indexPath = fullPath;
 		if (!indexPath.empty() && indexPath[indexPath.length() - 1] != '/')
 			indexPath += "/";
-		indexPath += "index.html";	// TO DO
+		indexPath += obj.getIndex();
 		
 		struct stat indexStat;
 		printMsg("DEBUG: Checking directory stat for: " + fullPath);

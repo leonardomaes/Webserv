@@ -138,6 +138,11 @@ bool Config::parseConfig()
                     throw ParseException("line" + ntos(_line_nr) + ": expected '{' after 'server'");            
                 
                 ServerConfig server = parseServerBlock();
+				for (std::vector<ServerConfig>::iterator it = _servers.begin(); it != _servers.end(); it++)
+				{
+					if (server.listen == it->listen)
+						throw ParseException("Multiple listen to same port\n");
+				}
                 _servers.push_back(server);         //store info in _servers
             }
             else
@@ -545,6 +550,7 @@ ServerConfig Config::buildServerConfig(const std::map<std::string, std::string> 
 
     // mandatory fields
     conf.listen = trim(serverParams.find("listen")->second);
+
     conf.root   = trim(serverParams.find("root")->second);
 
     it = serverParams.find("host");
